@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Import pages (using lowercase to match your file names)
+import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';
 import StudentDashboard from './pages/studentdashboard';
@@ -24,49 +25,47 @@ function AppContent() {
     );
   }
 
-  // If not logged in, show auth screens
-  if (!user) {
+  // If user is logged in, show dashboard
+  if (user) {
+    const userRole = user.profile?.role || 'student';
+    
+    // Admin user - show admin dashboard
+    if (userRole === 'admin') {
+      return (
+        <Router>
+          <Routes>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/payment/verify" element={<PaymentVerify />} />
+            <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </Router>
+      );
+    }
+
+    // Student user - show student dashboard
     return (
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/payment/verify" element={<PaymentVerify />} />
           <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
     );
   }
 
-  // User is logged in - check role
-  const userRole = user.profile?.role || 'student';
-  console.log('User role determined:', userRole);
-
-  // Admin user - show admin dashboard
-  if (userRole === 'admin') {
-    console.log('✅ ADMIN ACCESS - Showing admin dashboard');
-    return (
-      <Router>
-        <Routes>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/payment/verify" element={<PaymentVerify />} />
-          <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
-      </Router>
-    );
-  }
-
-  // Student user - show student dashboard
-  console.log('✅ STUDENT ACCESS - Showing student dashboard');
+  // User is NOT logged in - show guest page
   return (
     <Router>
       <Routes>
-        <Route path="/dashboard" element={<StudentDashboard />} />
+        <Route path="/" element={<Guest />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/payment/verify" element={<PaymentVerify />} />
         <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
