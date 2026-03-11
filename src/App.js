@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-// Import pages (using lowercase to match your file names)
+// Import pages
 import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';

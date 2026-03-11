@@ -33,7 +33,7 @@ export default function Guest() {
       <nav style={styles.navbar}>
         <div style={styles.navContainer}>
           <div style={styles.logoContainer}>
-            <span style={styles.logoText}>Story Mode</span>
+            <span style={styles.logoText}>Study Mart</span>
           </div>
           <div style={styles.navButtons}>
             <Link to="/login" style={styles.navLink}>Login</Link>
@@ -45,11 +45,11 @@ export default function Guest() {
       {/* Hero Section */}
       <div style={styles.heroSection}>
         <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>Welcome to <span style={styles.heroHighlight}>Story Mode</span></h1>
-          <p style={styles.heroSubtitle}>Your journey to knowledge begins here</p>
+          <h1 style={styles.heroTitle}>Welcome to <span style={styles.heroHighlight}>Study Mart</span></h1>
+          <p style={styles.heroSubtitle}>Your Ultimate Learning Marketplace</p>
           <p style={styles.heroDescription}>
-            Learn, create, and share with a community of passionate learners.
-            Join thousands of students already on their learning journey.
+            Discover thousands of courses, connect with expert instructors, 
+            and join a community of passionate learners. Start your journey today!
           </p>
           <div style={styles.heroButtons}>
             <Link 
@@ -94,22 +94,37 @@ export default function Guest() {
 
       {/* Features Section */}
       <div style={styles.featuresSection}>
-        <h2 style={styles.sectionTitle}>Why Choose <span style={styles.highlight}>Story Mode</span></h2>
+        <h2 style={styles.sectionTitle}>Why Choose <span style={styles.highlight}>Study Mart</span></h2>
         <div style={styles.featuresGrid}>
           <div style={styles.featureCard}>
             <div style={styles.featureIcon}>📚</div>
             <h3 style={styles.featureTitle}>Learn Anything</h3>
-            <p style={styles.featureDescription}>Access thousands of courses from expert instructors</p>
+            <p style={styles.featureDescription}>Access thousands of courses from expert instructors worldwide</p>
           </div>
           <div style={styles.featureCard}>
             <div style={styles.featureIcon}>🚀</div>
             <h3 style={styles.featureTitle}>Learn at Your Pace</h3>
-            <p style={styles.featureDescription}>Self-paced learning with lifetime access</p>
+            <p style={styles.featureDescription}>Self-paced learning with lifetime access to all materials</p>
           </div>
           <div style={styles.featureCard}>
             <div style={styles.featureIcon}>🌍</div>
             <h3 style={styles.featureTitle}>Join Community</h3>
             <p style={styles.featureDescription}>Connect with learners from around the world</p>
+          </div>
+          <div style={styles.featureCard}>
+            <div style={styles.featureIcon}>💰</div>
+            <h3 style={styles.featureTitle}>Earn as You Learn</h3>
+            <p style={styles.featureDescription}>Become a seller and earn from your knowledge</p>
+          </div>
+          <div style={styles.featureCard}>
+            <div style={styles.featureIcon}>📱</div>
+            <h3 style={styles.featureTitle}>Learn Anywhere</h3>
+            <p style={styles.featureDescription}>Access courses on desktop, tablet, or mobile</p>
+          </div>
+          <div style={styles.featureCard}>
+            <div style={styles.featureIcon}>🎯</div>
+            <h3 style={styles.featureTitle}>Track Progress</h3>
+            <p style={styles.featureDescription}>Monitor your learning journey with detailed analytics</p>
           </div>
         </div>
       </div>
@@ -134,10 +149,65 @@ export default function Guest() {
         </div>
       </div>
 
+      {/* How It Works Section */}
+      <div style={styles.howItWorksSection}>
+        <h2 style={styles.sectionTitle}>How It <span style={styles.highlight}>Works</span></h2>
+        <div style={styles.stepsGrid}>
+          <div style={styles.stepCard}>
+            <div style={styles.stepNumber}>1</div>
+            <h3 style={styles.stepTitle}>Create Account</h3>
+            <p style={styles.stepDescription}>Sign up for free and join our learning community</p>
+          </div>
+          <div style={styles.stepCard}>
+            <div style={styles.stepNumber}>2</div>
+            <h3 style={styles.stepTitle}>Choose Courses</h3>
+            <p style={styles.stepDescription}>Browse and enroll in courses that interest you</p>
+          </div>
+          <div style={styles.stepCard}>
+            <div style={styles.stepNumber}>3</div>
+            <h3 style={styles.stepTitle}>Start Learning</h3>
+            <p style={styles.stepDescription}>Learn at your own pace with video lessons and materials</p>
+          </div>
+          <div style={styles.stepCard}>
+            <div style={styles.stepNumber}>4</div>
+            <h3 style={styles.stepTitle}>Earn & Grow</h3>
+            <p style={styles.stepDescription}>Get certificates and even become a seller yourself</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonials Section */}
+      <div style={styles.testimonialsSection}>
+        <h2 style={styles.sectionTitle}>What Our <span style={styles.highlight}>Students Say</span></h2>
+        <div style={styles.testimonialsGrid}>
+          <div style={styles.testimonialCard}>
+            <p style={styles.testimonialText}>"Study Mart transformed my career. The courses are top-notch and the instructors are incredibly knowledgeable."</p>
+            <div style={styles.testimonialAuthor}>
+              <span style={styles.testimonialName}>- Sarah Johnson</span>
+              <span style={styles.testimonialRole}>Web Developer</span>
+            </div>
+          </div>
+          <div style={styles.testimonialCard}>
+            <p style={styles.testimonialText}>"I started as a student and now I'm a seller. The platform made it easy to share my expertise and earn income."</p>
+            <div style={styles.testimonialAuthor}>
+              <span style={styles.testimonialName}>- Michael Chen</span>
+              <span style={styles.testimonialRole}>Course Creator</span>
+            </div>
+          </div>
+          <div style={styles.testimonialCard}>
+            <p style={styles.testimonialText}>"The community aspect is what sets Study Mart apart. I've connected with so many like-minded learners."</p>
+            <div style={styles.testimonialAuthor}>
+              <span style={styles.testimonialName}>- Priya Patel</span>
+              <span style={styles.testimonialRole}>Data Scientist</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div style={styles.ctaSection}>
-        <h2 style={styles.ctaTitle}>Ready to Start Your Journey?</h2>
-        <p style={styles.ctaDescription}>Join thousands of learners today and transform your future</p>
+        <h2 style={styles.ctaTitle}>Ready to Start Your Learning Journey?</h2>
+        <p style={styles.ctaDescription}>Join thousands of students already learning on Study Mart</p>
         <Link 
           to="/register"
           style={{
@@ -157,14 +227,15 @@ export default function Guest() {
       {/* Footer */}
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
-          <div style={styles.footerLogo}>Story Mode</div>
+          <div style={styles.footerLogo}>Study Mart</div>
           <div style={styles.footerLinks}>
             <Link to="/about" style={styles.footerLink}>About</Link>
             <Link to="/contact" style={styles.footerLink}>Contact</Link>
             <Link to="/terms" style={styles.footerLink}>Terms</Link>
             <Link to="/privacy" style={styles.footerLink}>Privacy</Link>
+            <Link to="/faq" style={styles.footerLink}>FAQ</Link>
           </div>
-          <p style={styles.copyright}>© 2024 Story Mode. All rights reserved.</p>
+          <p style={styles.copyright}>© 2024 Study Mart. All rights reserved.</p>
         </div>
       </footer>
     </div>
@@ -185,7 +256,7 @@ const styles = {
     left: '-10%',
     width: '600px',
     height: '600px',
-    background: 'radial-gradient(circle, rgba(255,107,53,0.2) 0%, rgba(46,204,113,0.1) 50%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(46,204,113,0.1) 50%, transparent 70%)',
     borderRadius: '50%',
     animation: 'float 20s ease-in-out infinite',
     zIndex: 0,
@@ -196,7 +267,7 @@ const styles = {
     right: '-10%',
     width: '700px',
     height: '700px',
-    background: 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(30,58,138,0.1) 50%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(255,107,53,0.15) 0%, rgba(37,99,235,0.1) 50%, transparent 70%)',
     borderRadius: '50%',
     animation: 'float 15s ease-in-out infinite reverse',
     zIndex: 0,
@@ -208,8 +279,8 @@ const styles = {
     right: 0,
     bottom: 0,
     backgroundImage: `
-      linear-gradient(rgba(37,99,235,0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(37,99,235,0.05) 1px, transparent 1px)
+      linear-gradient(rgba(99,102,241,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,102,241,0.05) 1px, transparent 1px)
     `,
     backgroundSize: '50px 50px',
     zIndex: 0,
@@ -217,9 +288,9 @@ const styles = {
 
   // Navbar
   navbar: {
-    background: 'linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)',
+    background: 'linear-gradient(90deg, #6366f1 0%, #2563EB 100%)',
     padding: '1rem 0',
-    boxShadow: '0 4px 20px rgba(37, 99, 235, 0.3)',
+    boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
     position: 'sticky',
     top: 0,
     zIndex: 100,
@@ -327,24 +398,24 @@ const styles = {
   },
   primaryButtonHover: {
     transform: 'translateY(-2px) scale(1.05)',
-    boxShadow: '0 12px 30px rgba(46,204,113,0.4)',
+    boxShadow: '0 12px 30px rgba(99,102,241,0.4)',
   },
   secondaryButton: {
     padding: '14px 32px',
     background: 'transparent',
-    color: '#2563EB',
+    color: '#6366f1',
     textDecoration: 'none',
     borderRadius: '12px',
     fontSize: '16px',
     fontWeight: '600',
-    border: '2px solid #2563EB',
+    border: '2px solid #6366f1',
     transition: 'all 0.2s ease',
   },
   secondaryButtonHover: {
-    background: '#2563EB',
+    background: '#6366f1',
     color: 'white',
     transform: 'translateY(-2px)',
-    boxShadow: '0 8px 20px rgba(37,99,235,0.3)',
+    boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
   },
   buttonPressed: {
     transform: 'translateY(2px) scale(0.98)',
@@ -450,7 +521,7 @@ const styles = {
     boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
     textAlign: 'center',
     transition: 'all 0.3s ease',
-    border: '1px solid rgba(37,99,235,0.1)',
+    border: '1px solid rgba(99,102,241,0.1)',
     ':hover': {
       transform: 'translateY(-10px)',
       boxShadow: '0 20px 30px rgba(255,107,53,0.1)',
@@ -504,9 +575,103 @@ const styles = {
     fontWeight: '500',
   },
 
+  // How It Works Section
+  howItWorksSection: {
+    maxWidth: '1200px',
+    margin: '80px auto',
+    padding: '0 20px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  stepsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '30px',
+  },
+  stepCard: {
+    background: 'white',
+    padding: '40px 30px',
+    borderRadius: '20px',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
+    textAlign: 'center',
+    position: 'relative',
+    border: '1px solid rgba(99,102,241,0.1)',
+  },
+  stepNumber: {
+    position: 'absolute',
+    top: '-20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '40px',
+    height: '40px',
+    background: 'linear-gradient(135deg, #FF6B35, #6366f1)',
+    color: 'white',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
+  },
+  stepTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: '15px',
+    marginTop: '10px',
+  },
+  stepDescription: {
+    fontSize: '14px',
+    color: '#64748B',
+    lineHeight: '1.6',
+  },
+
+  // Testimonials Section
+  testimonialsSection: {
+    maxWidth: '1200px',
+    margin: '80px auto',
+    padding: '0 20px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  testimonialsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '30px',
+  },
+  testimonialCard: {
+    background: 'white',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
+    border: '1px solid rgba(99,102,241,0.1)',
+  },
+  testimonialText: {
+    fontSize: '16px',
+    color: '#4B5563',
+    lineHeight: '1.6',
+    marginBottom: '20px',
+    fontStyle: 'italic',
+  },
+  testimonialAuthor: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  testimonialName: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  testimonialRole: {
+    fontSize: '12px',
+    color: '#64748B',
+    marginTop: '4px',
+  },
+
   // CTA Section
   ctaSection: {
-    background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)',
+    background: 'linear-gradient(135deg, #6366f1 0%, #2563EB 100%)',
     padding: '80px 20px',
     textAlign: 'center',
     position: 'relative',
@@ -599,8 +764,8 @@ const globalStyles = `
   }
   
   @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
   }
   
   @keyframes spin {
