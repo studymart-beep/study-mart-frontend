@@ -1,8 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function CommunitySection({ 
-  communityTab,
-  setCommunityTab,
   feedPosts,
   loadingFeed,
   feedError,
@@ -31,636 +29,598 @@ export default function CommunitySection({
   handleButtonMouseDown,
   handleButtonMouseUp
 }) {
-  return (
-    <div style={styles.communityContainer}>
-      {/* Community Hero with Background Image */}
-      <div style={styles.communityHero}>
-        <div style={styles.heroOverlay}></div>
-        <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>StudyMart Community</h1>
-          <p style={styles.heroSubtitle}>Connect, Learn, Grow Together</p>
-          <div style={styles.heroStats}>
-            <div style={styles.heroStat}>
-              <span style={styles.heroStatNumber}>12.5k+</span>
-              <span style={styles.heroStatLabel}>Members</span>
-            </div>
-            <div style={styles.heroStat}>
-              <span style={styles.heroStatNumber}>345</span>
-              <span style={styles.heroStatLabel}>Online Now</span>
-            </div>
-            <div style={styles.heroStat}>
-              <span style={styles.heroStatNumber}>724</span>
-              <span style={styles.heroStatLabel}>Topics</span>
-            </div>
-          </div>
-        </div>
-      </div>
+  const [communityTab, setCommunityTab] = useState('home');
 
-      {/* Top Action Tabs */}
-      <div style={styles.communityActionTabs}>
-        {['feed', 'qna', 'tips', 'resources', 'live', 'groups', 'messages'].map(tab => (
-          <button 
-            key={tab}
+  // WhatsApp-style icons for tabs
+  const tabs = [
+    { id: 'home', icon: '🏠', label: 'Home', activeColor: '#25D366' },
+    { id: 'channel', icon: '📺', label: 'Channel', activeColor: '#FF6B35' },
+    { id: 'reels', icon: '🎬', label: 'Reels', activeColor: '#6366f1' },
+    { id: 'people', icon: '👥', label: 'People', activeColor: '#10b981' },
+    { id: 'chat', icon: '💬', label: 'Chat', activeColor: '#3b82f6' }
+  ];
+
+  return (
+    <div style={styles.container}>
+      {/* WhatsApp-style Tab Bar */}
+      <div style={styles.tabBar}>
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setCommunityTab(tab.id)}
             style={{
-              ...styles.communityTab,
-              ...(communityTab === tab ? styles.communityTabActive : {}),
-              ...(hoveredButton === `tab-${tab}` ? styles.communityTabHover : {}),
-              ...(pressedButton === `tab-${tab}` ? styles.communityTabPressed : {})
+              ...styles.tab,
+              ...(communityTab === tab.id ? styles.tabActive : {}),
+              ...(communityTab === tab.id ? { borderBottomColor: tab.activeColor } : {}),
+              ...(hoveredButton === `tab-${tab.id}` ? styles.tabHover : {}),
+              ...(pressedButton === `tab-${tab.id}` ? styles.tabPressed : {})
             }}
-            onClick={() => setCommunityTab(tab)}
-            onMouseEnter={() => handleButtonMouseEnter(`tab-${tab}`)}
+            onMouseEnter={() => handleButtonMouseEnter(`tab-${tab.id}`)}
             onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown(`tab-${tab}`)}
+            onMouseDown={() => handleButtonMouseDown(`tab-${tab.id}`)}
             onMouseUp={handleButtonMouseUp}
+            title={tab.label} // Tooltip on hover
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <span style={styles.tabIcon}>{tab.icon}</span>
           </button>
         ))}
       </div>
 
-      {/* Main Community Grid */}
-      <div style={styles.communityGrid}>
-        {/* Left Main Area */}
-        <div style={styles.communityMain}>
-          {communityTab === 'feed' && (
-            <div>
-              <h3 style={styles.columnTitle}>Feed</h3>
-              {/* Create Post Form */}
-              <form onSubmit={handleCreatePost} style={styles.createPostForm}>
-                <textarea
-                  placeholder="What's on your mind?"
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  style={styles.postTextarea}
-                  rows="3"
-                />
-                <div style={styles.postActions}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setNewPostImage(e.target.files[0])}
-                    id="post-image-input"
-                    style={{ display: 'none' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('post-image-input').click()}
-                    style={{
-                      ...styles.imageUploadButton,
-                      ...(hoveredButton === 'image-upload' ? styles.imageUploadButtonHover : {}),
-                      ...(pressedButton === 'image-upload' ? styles.imageUploadButtonPressed : {})
-                    }}
-                    onMouseEnter={() => handleButtonMouseEnter('image-upload')}
-                    onMouseLeave={handleButtonMouseLeave}
-                    onMouseDown={() => handleButtonMouseDown('image-upload')}
-                    onMouseUp={handleButtonMouseUp}
-                  >
-                    📷 Add Image
-                  </button>
-                  {newPostImage && <span style={styles.fileName}>{newPostImage.name}</span>}
-                  <button 
-                    type="submit" 
-                    disabled={posting} 
-                    style={{
-                      ...styles.submitPostButton,
-                      ...(hoveredButton === 'submit-post' && !posting ? styles.submitPostButtonHover : {}),
-                      ...(pressedButton === 'submit-post' && !posting ? styles.submitPostButtonPressed : {})
-                    }}
-                    onMouseEnter={() => !posting && handleButtonMouseEnter('submit-post')}
-                    onMouseLeave={handleButtonMouseLeave}
-                    onMouseDown={() => !posting && handleButtonMouseDown('submit-post')}
-                    onMouseUp={handleButtonMouseUp}
-                  >
-                    {posting ? 'Posting...' : 'Post'}
-                  </button>
-                </div>
-              </form>
+      {/* Tab Content */}
+      <div style={styles.content}>
+        {/* HOME TAB - Feed */}
+        {communityTab === 'home' && (
+          <div style={styles.feedContainer}>
+            <div style={styles.feedHeader}>
+              <h2 style={styles.sectionTitle}>🏠 Home</h2>
+            </div>
 
-              {loadingFeed ? (
-                <div style={styles.loadingContainer}>
-                  <div style={styles.loader}></div>
-                  <p style={styles.loadingText}>Loading feed...</p>
-                </div>
-              ) : feedError ? (
-                <p style={{ color: 'red' }}>{feedError}</p>
-              ) : feedPosts.length === 0 ? (
+            {/* Create Post Form */}
+            <div style={styles.createPostCard}>
+              <textarea
+                placeholder="What's on your mind?"
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                style={styles.postInput}
+                rows="2"
+              />
+              <div style={styles.postActions}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewPostImage(e.target.files[0])}
+                  id="post-image"
+                  style={{ display: 'none' }}
+                />
+                <button
+                  onClick={() => document.getElementById('post-image').click()}
+                  style={styles.iconButton}
+                  title="Add Image"
+                >
+                  📷
+                </button>
+                {newPostImage && (
+                  <span style={styles.fileName}>{newPostImage.name}</span>
+                )}
+                <button
+                  onClick={handleCreatePost}
+                  disabled={posting || !newPostContent.trim()}
+                  style={{
+                    ...styles.postButton,
+                    ...(posting ? styles.disabled : {})
+                  }}
+                >
+                  {posting ? 'Posting...' : 'Post'}
+                </button>
+              </div>
+            </div>
+
+            {/* Feed Posts */}
+            {loadingFeed ? (
+              <div style={styles.loadingContainer}>
+                <div style={styles.loader}></div>
+              </div>
+            ) : feedError ? (
+              <div style={styles.errorMessage}>{feedError}</div>
+            ) : feedPosts.length === 0 ? (
+              <div style={styles.emptyState}>
                 <p>No posts yet. Be the first to post!</p>
-              ) : (
-                feedPosts.map((post) => (
-                  <div key={post.id} style={styles.feedPost}>
-                    <div style={styles.postHeader} onClick={() => handleViewProfile(post.user_id)}>
-                      <div style={styles.authorAvatar}>
-                        {post.user?.avatar_url ? (
-                          <img src={post.user.avatar_url} alt="avatar" style={styles.avatarThumb} />
-                        ) : (
-                          '👤'
-                        )}
-                      </div>
-                      <div>
-                        <h4 style={styles.authorName}>
-                          {post.user?.full_name} <span style={styles.authorRole}>• {post.user?.role}</span>
-                        </h4>
-                        <p style={styles.postTime}>{new Date(post.created_at).toLocaleString()}</p>
-                      </div>
+              </div>
+            ) : (
+              feedPosts.map(post => (
+                <div key={post.id} style={styles.postCard}>
+                  <div style={styles.postHeader} onClick={() => handleViewProfile(post.user_id)}>
+                    <div style={styles.avatar}>
+                      {post.user?.avatar_url ? (
+                        <img src={post.user.avatar_url} alt="avatar" style={styles.avatarImage} />
+                      ) : (
+                        <span style={styles.avatarPlaceholder}>👤</span>
+                      )}
                     </div>
-                    <p style={styles.postContent}>{post.content}</p>
-                    {post.image_url && <img src={post.image_url} alt="post" style={styles.postImage} />}
-                    <div style={styles.postStats}>
-                      <button
-                        style={{
-                          ...styles.likeButton,
-                          ...(post.liked ? styles.likedButton : {}),
-                          ...(hoveredButton === `like-${post.id}` ? styles.likeButtonHover : {}),
-                          ...(pressedButton === `like-${post.id}` ? styles.likeButtonPressed : {})
-                        }}
-                        onClick={() => handleLikePost(post.id)}
-                        onMouseEnter={() => handleButtonMouseEnter(`like-${post.id}`)}
-                        onMouseLeave={handleButtonMouseLeave}
-                        onMouseDown={() => handleButtonMouseDown(`like-${post.id}`)}
-                        onMouseUp={handleButtonMouseUp}
-                      >
-                        ❤️ {post.likes}
-                      </button>
-                      <span>💬 {post.comments || 0}</span>
+                    <div style={styles.postInfo}>
+                      <h4 style={styles.authorName}>
+                        {post.user?.full_name || 'Unknown'}
+                        <span style={styles.authorRole}> • {post.user?.role || 'member'}</span>
+                      </h4>
+                      <span style={styles.postTime}>
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {communityTab === 'qna' && <div><h3 style={styles.columnTitle}>Q&A Forums</h3><p>Coming soon...</p></div>}
-          {communityTab === 'tips' && <div><h3 style={styles.columnTitle}>Study Tips</h3><p>Coming soon...</p></div>}
-          {communityTab === 'resources' && <div><h3 style={styles.columnTitle}>Resources</h3><p>Coming soon...</p></div>}
-          {communityTab === 'live' && <div><h3 style={styles.columnTitle}>Live Sessions</h3><p>Coming soon...</p></div>}
-
-          {communityTab === 'groups' && (
-            <div>
-              <h3 style={styles.columnTitle}>Study Groups</h3>
-              <button 
-                onClick={handleCreateGroup} 
-                style={{
-                  ...styles.createGroupButton,
-                  ...(hoveredButton === 'create-group' ? styles.createGroupButtonHover : {}),
-                  ...(pressedButton === 'create-group' ? styles.createGroupButtonPressed : {})
-                }}
-                onMouseEnter={() => handleButtonMouseEnter('create-group')}
-                onMouseLeave={handleButtonMouseLeave}
-                onMouseDown={() => handleButtonMouseDown('create-group')}
-                onMouseUp={handleButtonMouseUp}
-              >
-                + Create New Group
-              </button>
-              {loadingGroups ? (
-                <div style={styles.loadingContainer}>
-                  <div style={styles.loader}></div>
-                  <p style={styles.loadingText}>Loading groups...</p>
+                  
+                  <p style={styles.postContent}>{post.content}</p>
+                  
+                  {post.image_url && (
+                    <img src={post.image_url} alt="post" style={styles.postImage} />
+                  )}
+                  
+                  <div style={styles.postFooter}>
+                    <button
+                      onClick={() => handleLikePost(post.id)}
+                      style={{
+                        ...styles.likeButton,
+                        ...(post.liked ? styles.liked : {})
+                      }}
+                    >
+                      ❤️ {post.likes || 0}
+                    </button>
+                    <span style={styles.commentCount}>
+                      💬 {post.comments || 0}
+                    </span>
+                  </div>
                 </div>
-              ) : groups.length === 0 ? (
-                <p>No groups yet.</p>
-              ) : (
-                groups.map(group => (
-                  <div key={group.id} style={styles.groupCard}>
-                    <div style={styles.groupIcon}>👥</div>
-                    <div style={styles.groupInfo}>
-                      <h4>{group.name}</h4>
-                      <p>{group.members} members • {group.description}</p>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* CHANNEL TAB - Groups/Channels */}
+        {communityTab === 'channel' && (
+          <div style={styles.channelContainer}>
+            <div style={styles.channelHeader}>
+              <h2 style={styles.sectionTitle}>📺 Channels</h2>
+              <button
+                onClick={handleCreateGroup}
+                style={styles.createButton}
+              >
+                + Create Channel
+              </button>
+            </div>
+
+            {loadingGroups ? (
+              <div style={styles.loadingContainer}>
+                <div style={styles.loader}></div>
+              </div>
+            ) : groups.length === 0 ? (
+              <div style={styles.emptyState}>
+                <p>No channels yet. Create one to start!</p>
+              </div>
+            ) : (
+              <div style={styles.channelGrid}>
+                {groups.map(group => (
+                  <div key={group.id} style={styles.channelCard}>
+                    <div style={styles.channelIcon}>
+                      {group.icon || '📢'}
+                    </div>
+                    <div style={styles.channelInfo}>
+                      <h4 style={styles.channelName}>{group.name}</h4>
+                      <p style={styles.channelMeta}>
+                        {group.members} members • {group.description}
+                      </p>
                       {group.joined ? (
-                        <button 
-                          style={{
-                            ...styles.leaveButton,
-                            ...(hoveredButton === `leave-${group.id}` ? styles.leaveButtonHover : {}),
-                            ...(pressedButton === `leave-${group.id}` ? styles.leaveButtonPressed : {})
-                          }}
+                        <button
                           onClick={() => handleLeaveGroup(group.id)}
-                          onMouseEnter={() => handleButtonMouseEnter(`leave-${group.id}`)}
-                          onMouseLeave={handleButtonMouseLeave}
-                          onMouseDown={() => handleButtonMouseDown(`leave-${group.id}`)}
-                          onMouseUp={handleButtonMouseUp}
+                          style={styles.leaveButton}
                         >
                           Leave
                         </button>
                       ) : (
-                        <button 
-                          style={{
-                            ...styles.joinButton,
-                            ...(hoveredButton === `join-${group.id}` ? styles.joinButtonHover : {}),
-                            ...(pressedButton === `join-${group.id}` ? styles.joinButtonPressed : {})
-                          }}
+                        <button
                           onClick={() => handleJoinGroup(group.id)}
-                          onMouseEnter={() => handleButtonMouseEnter(`join-${group.id}`)}
-                          onMouseLeave={handleButtonMouseLeave}
-                          onMouseDown={() => handleButtonMouseDown(`join-${group.id}`)}
-                          onMouseUp={handleButtonMouseUp}
+                          style={styles.joinButton}
                         >
                           Join
                         </button>
                       )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-          {communityTab === 'messages' && (
-            <div>
-              <h3 style={styles.columnTitle}>Messages</h3>
-              {loadingMessages ? (
-                <div style={styles.loadingContainer}>
-                  <div style={styles.loader}></div>
-                  <p style={styles.loadingText}>Loading messages...</p>
-                </div>
-              ) : messages.length === 0 ? (
-                <p>No messages yet.</p>
-              ) : (
-                messages.map(chat => (
-                  <div 
-                    key={chat.id} 
-                    style={styles.messageCard} 
-                    onClick={() => alert(`Open chat with ${chat.with_name}`)}
-                    onMouseEnter={() => handleButtonMouseEnter(`chat-${chat.id}`)}
-                    onMouseLeave={handleButtonMouseLeave}
-                  >
-                    <div style={styles.messageAvatar}>👤</div>
-                    <div style={styles.messageInfo}>
-                      <h4>{chat.with_name}</h4>
-                      <p>{chat.last_message}</p>
-                    </div>
-                    <div style={styles.messageMeta}>
-                      <span>{new Date(chat.updated_at).toLocaleTimeString()}</span>
-                      {chat.unread > 0 && <span style={styles.unreadBadge}>{chat.unread}</span>}
-                    </div>
+        {/* REELS TAB - Short videos */}
+        {communityTab === 'reels' && (
+          <div style={styles.reelsContainer}>
+            <h2 style={styles.sectionTitle}>🎬 Reels</h2>
+            <div style={styles.reelsGrid}>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} style={styles.reelCard}>
+                  <div style={styles.reelThumbnail}>🎥</div>
+                  <div style={styles.reelInfo}>
+                    <p style={styles.reelTitle}>Coming Soon</p>
+                    <p style={styles.reelViews}>Short videos feature</p>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Right Sidebar - Quick Info */}
-        <div style={styles.communitySidebar}>
-          <div style={styles.sidebarSection}>
-            <h3 style={styles.sidebarTitle}>Top Contributors</h3>
-            {topContributors.map(contributor => (
-              <div 
-                key={contributor.id} 
-                style={styles.contributorCard} 
-                onClick={() => handleViewProfile(contributor.id)}
-                onMouseEnter={() => handleButtonMouseEnter(`contributor-${contributor.id}`)}
-                onMouseLeave={handleButtonMouseLeave}
-              >
-                <span>{contributor.full_name}</span>
-                <span>{contributor.posts} posts</span>
-              </div>
-            ))}
+        {/* PEOPLE TAB - Top Contributors */}
+        {communityTab === 'people' && (
+          <div style={styles.peopleContainer}>
+            <h2 style={styles.sectionTitle}>👥 People</h2>
+            
+            {/* Top Contributors */}
+            <div style={styles.contributorsSection}>
+              <h3 style={styles.subSectionTitle}>Top Contributors</h3>
+              {topContributors.map((contributor, index) => (
+                <div
+                  key={contributor.id}
+                  style={styles.contributorCard}
+                  onClick={() => handleViewProfile(contributor.id)}
+                >
+                  <div style={styles.rankBadge}>#{index + 1}</div>
+                  <div style={styles.avatar}>
+                    <span style={styles.avatarPlaceholder}>👤</span>
+                  </div>
+                  <div style={styles.contributorInfo}>
+                    <h4 style={styles.contributorName}>{contributor.full_name}</h4>
+                    <p style={styles.contributorStats}>
+                      {contributor.posts} posts
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Upcoming Events */}
+            <div style={styles.eventsSection}>
+              <h3 style={styles.subSectionTitle}>Upcoming Events</h3>
+              {events.map(event => (
+                <div key={event.id} style={styles.eventCard}>
+                  <div style={styles.eventIcon}>📅</div>
+                  <div style={styles.eventInfo}>
+                    <h4 style={styles.eventTitle}>{event.title}</h4>
+                    <p style={styles.eventDate}>
+                      {new Date(event.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {!event.attending && (
+                    <button
+                      onClick={() => handleAttendEvent(event.id)}
+                      style={styles.attendButton}
+                    >
+                      Attend
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={styles.sidebarSection}>
-            <h3 style={styles.sidebarTitle}>Upcoming Events</h3>
-            {events.map(event => (
-              <div key={event.id} style={styles.eventCard}>
-                <span>📅 {event.title}</span>
-                <span>{new Date(event.date).toLocaleDateString()}</span>
-                {!event.attending && (
-                  <button 
-                    style={{
-                      ...styles.attendButton,
-                      ...(hoveredButton === `attend-${event.id}` ? styles.attendButtonHover : {}),
-                      ...(pressedButton === `attend-${event.id}` ? styles.attendButtonPressed : {})
-                    }}
-                    onClick={() => handleAttendEvent(event.id)}
-                    onMouseEnter={() => handleButtonMouseEnter(`attend-${event.id}`)}
-                    onMouseLeave={handleButtonMouseLeave}
-                    onMouseDown={() => handleButtonMouseDown(`attend-${event.id}`)}
-                    onMouseUp={handleButtonMouseUp}
-                  >
-                    Attend
-                  </button>
-                )}
+        )}
+
+        {/* CHAT TAB - Messages */}
+        {communityTab === 'chat' && (
+          <div style={styles.chatContainer}>
+            <h2 style={styles.sectionTitle}>💬 Messages</h2>
+            
+            {loadingMessages ? (
+              <div style={styles.loadingContainer}>
+                <div style={styles.loader}></div>
               </div>
-            ))}
+            ) : messages.length === 0 ? (
+              <div style={styles.emptyState}>
+                <p>No messages yet. Start a conversation!</p>
+              </div>
+            ) : (
+              messages.map(chat => (
+                <div
+                  key={chat.id}
+                  style={styles.chatCard}
+                  onClick={() => alert(`Open chat with ${chat.with_name}`)}
+                >
+                  <div style={styles.chatAvatar}>👤</div>
+                  <div style={styles.chatInfo}>
+                    <h4 style={styles.chatName}>{chat.with_name}</h4>
+                    <p style={styles.chatPreview}>{chat.last_message}</p>
+                  </div>
+                  <div style={styles.chatMeta}>
+                    <span style={styles.chatTime}>
+                      {new Date(chat.updated_at).toLocaleTimeString()}
+                    </span>
+                    {chat.unread > 0 && (
+                      <span style={styles.unreadBadge}>{chat.unread}</span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
 const styles = {
-  communityContainer: {
+  container: {
+    width: '100%',
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '20px',
-  },
-  communityHero: {
-    position: 'relative',
-    height: '300px',
-    borderRadius: '16px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
     overflow: 'hidden',
-    marginBottom: '30px',
-    backgroundImage: 'url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    '@media (max-width: 768px)': {
-      height: '250px',
-    },
   },
-  heroOverlay: {
-    position: 'absolute',
+
+  // WhatsApp-style Tab Bar
+  tabBar: {
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #e2e8f0',
+    padding: '8px 0',
+    position: 'sticky',
     top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(135deg, rgba(30,58,138,0.8) 0%, rgba(37,99,235,0.7) 100%)',
+    zIndex: 10,
   },
-  heroContent: {
-    position: 'relative',
-    zIndex: 2,
+  tab: {
+    flex: 1,
     display: 'flex',
-    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
-    color: 'white',
-    textAlign: 'center',
-    padding: '20px',
-  },
-  heroTitle: {
-    fontSize: '36px',
-    fontWeight: 'bold',
-    marginBottom: '10px',
-    '@media (max-width: 768px)': {
-      fontSize: '28px',
-    },
-  },
-  heroSubtitle: {
-    fontSize: '18px',
-    marginBottom: '20px',
-    '@media (max-width: 768px)': {
-      fontSize: '16px',
-    },
-  },
-  heroStats: {
-    display: 'flex',
-    gap: '30px',
-    '@media (max-width: 768px)': {
-      flexDirection: 'column',
-      gap: '10px',
-    },
-  },
-  heroStat: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  heroStatNumber: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-  },
-  heroStatLabel: {
-    fontSize: '14px',
-    opacity: 0.9,
-  },
-  communityActionTabs: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  communityTab: {
-    padding: '8px 16px',
-    backgroundColor: '#f0f0f0',
+    padding: '12px 0',
+    backgroundColor: 'transparent',
     border: 'none',
-    borderRadius: '20px',
+    borderBottom: '3px solid transparent',
     cursor: 'pointer',
-    fontSize: '14px',
-    color: '#333',
-    '@media (max-width: 768px)': {
-      padding: '6px 12px',
-      fontSize: '13px',
-    },
+    transition: 'all 0.2s ease',
+    position: 'relative',
   },
-  communityTabHover: {
-    backgroundColor: '#FF6B35',
-    color: 'white',
-    transform: 'translateY(-2px)',
+  tabActive: {
+    borderBottom: '3px solid',
   },
-  communityTabPressed: {
+  tabHover: {
+    backgroundColor: '#f1f5f9',
+  },
+  tabPressed: {
     transform: 'scale(0.95)',
   },
-  communityTabActive: {
-    backgroundColor: '#6366f1',
-    color: 'white',
-  },
-  communityGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 300px',
-    gap: '20px',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
+  tabIcon: {
+    fontSize: '24px',
+    '@media (max-width: 480px)': {
+      fontSize: '20px',
     },
   },
-  communityMain: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
+
+  // Content Area
+  content: {
     padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   },
-  communitySidebar: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  sidebarSection: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  sidebarTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    marginBottom: '15px',
-    color: '#333',
-  },
-  columnTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    marginBottom: '15px',
-    color: '#333',
-  },
-  createPostForm: {
-    marginBottom: '20px',
-    padding: '15px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-  },
-  postTextarea: {
+
+  // Feed Styles
+  feedContainer: {
     width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
+  },
+  feedHeader: {
+    marginBottom: '20px',
+  },
+  sectionTitle: {
+    fontSize: '24px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 20px 0',
+  },
+  createPostCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '16px',
+    marginBottom: '20px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+  },
+  postInput: {
+    width: '100%',
+    padding: '12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
     fontSize: '14px',
-    marginBottom: '10px',
     resize: 'vertical',
+    marginBottom: '12px',
+    ':focus': {
+      outline: 'none',
+      borderColor: '#6366f1',
+    },
   },
   postActions: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '12px',
   },
-  imageUploadButton: {
+  iconButton: {
     padding: '8px 12px',
-    backgroundColor: '#e0e7ff',
+    backgroundColor: '#f1f5f9',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '8px',
+    fontSize: '16px',
     cursor: 'pointer',
-    fontSize: '13px',
-  },
-  imageUploadButtonHover: {
-    backgroundColor: '#FF6B35',
-    color: 'white',
-    transform: 'scale(1.05)',
-  },
-  imageUploadButtonPressed: {
-    transform: 'scale(0.95)',
+    ':hover': {
+      backgroundColor: '#e2e8f0',
+    },
   },
   fileName: {
     fontSize: '12px',
-    color: '#666',
+    color: '#64748b',
+    flex: 1,
   },
-  submitPostButton: {
-    padding: '8px 20px',
+  postButton: {
+    padding: '8px 24px',
     backgroundColor: '#6366f1',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
+    borderRadius: '8px',
     fontSize: '14px',
-    marginLeft: 'auto',
-  },
-  submitPostButtonHover: {
-    backgroundColor: '#FF6B35',
-    transform: 'scale(1.05)',
-  },
-  submitPostButtonPressed: {
-    transform: 'scale(0.95)',
-  },
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '30px',
-  },
-  loader: {
-    border: '4px solid rgba(37, 99, 235, 0.2)',
-    borderTop: '4px solid #FF6B35',
-    borderRight: '4px solid #2ECC71',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '15px',
-  },
-  loadingText: {
-    fontSize: '14px',
-    color: '#666',
-  },
-  feedPost: {
-    padding: '15px',
-    borderBottom: '1px solid #eee',
+    fontWeight: '500',
     cursor: 'pointer',
+    ':hover': {
+      backgroundColor: '#4f46e5',
+    },
+  },
+  disabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+  },
+  postCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '16px',
+    marginBottom: '16px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
   },
   postHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    marginBottom: '10px',
+    gap: '12px',
+    marginBottom: '12px',
+    cursor: 'pointer',
   },
-  authorAvatar: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '20px',
-    backgroundColor: '#e0e7ff',
+  avatar: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    backgroundColor: '#e2e8f0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '20px',
     overflow: 'hidden',
   },
-  avatarThumb: {
+  avatarImage: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
   },
+  avatarPlaceholder: {
+    fontSize: '24px',
+  },
+  postInfo: {
+    flex: 1,
+  },
   authorName: {
     fontSize: '16px',
     fontWeight: '600',
-    marginBottom: '2px',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
   },
   authorRole: {
-    fontSize: '12px',
-    color: '#666',
+    fontSize: '14px',
+    fontWeight: '400',
+    color: '#64748b',
   },
   postTime: {
     fontSize: '12px',
-    color: '#888',
+    color: '#94a3b8',
   },
   postContent: {
     fontSize: '14px',
-    marginBottom: '10px',
+    color: '#334155',
+    lineHeight: '1.6',
+    marginBottom: '12px',
   },
   postImage: {
-    maxWidth: '100%',
+    width: '100%',
     maxHeight: '400px',
-    objectFit: 'contain',
+    objectFit: 'cover',
     borderRadius: '8px',
-    marginBottom: '10px',
+    marginBottom: '12px',
   },
-  postStats: {
-    display: 'flex',
-    gap: '15px',
-    fontSize: '13px',
-    color: '#666',
-  },
-  likeButton: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#666',
-    fontSize: '13px',
-  },
-  likeButtonHover: {
-    color: '#FF6B35',
-    transform: 'scale(1.1)',
-  },
-  likeButtonPressed: {
-    transform: 'scale(0.95)',
-  },
-  likedButton: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#FF6B35',
-    fontSize: '13px',
-    fontWeight: 'bold',
-  },
-  groupCard: {
+  postFooter: {
     display: 'flex',
     alignItems: 'center',
-    gap: '15px',
-    padding: '15px',
-    backgroundColor: '#f9f9f9',
+    gap: '16px',
+    paddingTop: '12px',
+    borderTop: '1px solid #e2e8f0',
+  },
+  likeButton: {
+    padding: '6px 12px',
+    backgroundColor: '#f1f5f9',
+    border: 'none',
+    borderRadius: '20px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  liked: {
+    backgroundColor: '#fee2e2',
+    color: '#ef4444',
+  },
+  commentCount: {
+    fontSize: '14px',
+    color: '#64748b',
+  },
+
+  // Channel Styles
+  channelContainer: {
+    width: '100%',
+  },
+  channelHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px',
+  },
+  createButton: {
+    padding: '8px 16px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    border: 'none',
     borderRadius: '8px',
-    marginBottom: '10px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    ':hover': {
+      backgroundColor: '#059669',
+    },
   },
-  groupIcon: {
-    fontSize: '32px',
+  channelGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '16px',
   },
-  groupInfo: {
+  channelCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '16px',
+    display: 'flex',
+    gap: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+  },
+  channelIcon: {
+    width: '48px',
+    height: '48px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
+  },
+  channelInfo: {
     flex: 1,
+  },
+  channelName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
+  },
+  channelMeta: {
+    fontSize: '13px',
+    color: '#64748b',
+    marginBottom: '8px',
   },
   joinButton: {
     padding: '4px 12px',
@@ -668,15 +628,8 @@ const styles = {
     color: 'white',
     border: 'none',
     borderRadius: '4px',
-    cursor: 'pointer',
     fontSize: '12px',
-  },
-  joinButtonHover: {
-    backgroundColor: '#FF6B35',
-    transform: 'scale(1.05)',
-  },
-  joinButtonPressed: {
-    transform: 'scale(0.95)',
+    cursor: 'pointer',
   },
   leaveButton: {
     padding: '4px 12px',
@@ -684,78 +637,258 @@ const styles = {
     color: 'white',
     border: 'none',
     borderRadius: '4px',
-    cursor: 'pointer',
     fontSize: '12px',
+    cursor: 'pointer',
   },
-  leaveButtonHover: {
-    transform: 'scale(1.05)',
+
+  // Reels Styles
+  reelsContainer: {
+    width: '100%',
   },
-  leaveButtonPressed: {
-    transform: 'scale(0.95)',
+  reelsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '16px',
   },
-  createGroupButton: {
-    padding: '8px 16px',
-    backgroundColor: '#6366f1',
+  reelCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+  },
+  reelThumbnail: {
+    height: '200px',
+    backgroundColor: '#f1f5f9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '40px',
+  },
+  reelInfo: {
+    padding: '12px',
+  },
+  reelTitle: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
+  },
+  reelViews: {
+    fontSize: '12px',
+    color: '#64748b',
+    margin: 0,
+  },
+
+  // People Styles
+  peopleContainer: {
+    width: '100%',
+  },
+  contributorsSection: {
+    marginBottom: '30px',
+  },
+  subSectionTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 16px 0',
+  },
+  contributorCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px',
+    backgroundColor: '#ffffff',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+    position: 'relative',
+    ':hover': {
+      backgroundColor: '#f8fafc',
+    },
+  },
+  rankBadge: {
+    width: '24px',
+    height: '24px',
+    backgroundColor: '#f59e0b',
+    color: 'white',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    marginRight: '4px',
+  },
+  contributorInfo: {
+    flex: 1,
+  },
+  contributorName: {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 2px 0',
+  },
+  contributorStats: {
+    fontSize: '12px',
+    color: '#64748b',
+    margin: 0,
+  },
+  eventsSection: {
+    marginTop: '20px',
+  },
+  eventCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px',
+    backgroundColor: '#ffffff',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+  },
+  eventIcon: {
+    width: '40px',
+    height: '40px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 2px 0',
+  },
+  eventDate: {
+    fontSize: '12px',
+    color: '#64748b',
+    margin: 0,
+  },
+  attendButton: {
+    padding: '4px 12px',
+    backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
+    fontSize: '12px',
     cursor: 'pointer',
-    marginBottom: '15px',
   },
-  messageCard: {
+
+  // Chat Styles
+  chatContainer: {
+    width: '100%',
+  },
+  chatCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: '15px',
-    padding: '15px',
-    backgroundColor: '#f9f9f9',
+    gap: '12px',
+    padding: '12px',
+    backgroundColor: '#ffffff',
     borderRadius: '8px',
-    marginBottom: '10px',
+    marginBottom: '8px',
     cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+    ':hover': {
+      backgroundColor: '#f8fafc',
+    },
   },
-  messageAvatar: {
-    fontSize: '32px',
+  chatAvatar: {
+    width: '48px',
+    height: '48px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
   },
-  messageInfo: {
+  chatInfo: {
     flex: 1,
   },
-  messageMeta: {
+  chatName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 2px 0',
+  },
+  chatPreview: {
+    fontSize: '13px',
+    color: '#64748b',
+    margin: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '200px',
+  },
+  chatMeta: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
-    gap: '5px',
+    gap: '4px',
+  },
+  chatTime: {
+    fontSize: '11px',
+    color: '#94a3b8',
   },
   unreadBadge: {
     backgroundColor: '#6366f1',
     color: 'white',
     borderRadius: '12px',
-    padding: '2px 6px',
+    padding: '2px 8px',
     fontSize: '11px',
+    fontWeight: '600',
   },
-  contributorCard: {
+
+  // Loading States
+  loadingContainer: {
     display: 'flex',
-    justifyContent: 'space-between',
-    padding: '10px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-    marginBottom: '8px',
-    cursor: 'pointer',
-  },
-  eventCard: {
-    display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: '10px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-    marginBottom: '8px',
+    padding: '40px',
   },
-  attendButton: {
-    padding: '4px 8px',
-    backgroundColor: '#6366f1',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '11px',
+  loader: {
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #6366f1',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    animation: 'spin 1s linear infinite',
+  },
+  errorMessage: {
+    padding: '20px',
+    backgroundColor: '#fee2e2',
+    color: '#dc2626',
+    borderRadius: '8px',
+    textAlign: 'center',
+  },
+  emptyState: {
+    padding: '40px',
+    backgroundColor: '#ffffff',
+    borderRadius: '8px',
+    textAlign: 'center',
+    color: '#64748b',
+    fontSize: '16px',
   },
 };
+
+// Add keyframes to global CSS
+const globalStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// Inject global styles
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = globalStyles;
+  document.head.appendChild(style);
+}
