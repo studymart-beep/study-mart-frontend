@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({ 
@@ -6,6 +6,8 @@ export default function Navbar({
   setActiveSection, 
   setShowProfile, 
   profileData,
+  showNotifications,
+  toggleNotifications,
   hoveredButton,
   pressedButton,
   handleButtonMouseEnter,
@@ -13,12 +15,40 @@ export default function Navbar({
   handleButtonMouseDown,
   handleButtonMouseUp
 }) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [theme, setTheme] = useState('light'); // light, dark, system
+
+  const handleLogout = () => {
+    signOut();
+  };
+
+  const handleDeleteAccount = () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      // Add delete account logic here
+      alert('Account deletion requested');
+    }
+  };
+
+  const handleThemeChange = () => {
+    // Cycle through themes: light → dark → system
+    const themes = ['light', 'dark', 'system'];
+    const currentIndex = themes.indexOf(theme);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    setTheme(nextTheme);
+    
+    // Apply theme to document
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    alert(`Theme changed to ${nextTheme} mode`);
+  };
 
   return (
     <nav style={styles.navbar}>
       <div style={styles.navContainer}>
-        <img src="/images/logo.jpg" alt="StudyMart" style={styles.logoImage} />
+        <div style={styles.logoContainer}>
+          <span style={styles.logoText}>Study Mart</span>
+        </div>
+        
         <div style={styles.navButtons}>
           <button 
             style={{
@@ -81,23 +111,88 @@ export default function Navbar({
             Community
           </button>
         </div>
-        <button 
-          onClick={() => setShowProfile(true)} 
-          style={{
-            ...styles.profileButton,
-            ...(hoveredButton === 'profile' ? styles.profileButtonHover : {}),
-            ...(pressedButton === 'profile' ? styles.profileButtonPressed : {})
-          }}
-          onMouseEnter={() => handleButtonMouseEnter('profile')}
-          onMouseLeave={handleButtonMouseLeave}
-          onMouseDown={() => handleButtonMouseDown('profile')}
-          onMouseUp={handleButtonMouseUp}
-        >
-          <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
-          <div style={styles.avatarSmall}>
-            {profileData.avatar_url ? <img src={profileData.avatar_url} alt="Avatar" style={styles.avatarSmallImage} /> : <span>👤</span>}
+
+        <div style={styles.rightSection}>
+          <button 
+            onClick={toggleNotifications}
+            style={{
+              ...styles.notificationButton,
+              ...(hoveredButton === 'notifications' ? styles.notificationButtonHover : {}),
+              ...(pressedButton === 'notifications' ? styles.notificationButtonPressed : {})
+            }}
+            onMouseEnter={() => handleButtonMouseEnter('notifications')}
+            onMouseLeave={handleButtonMouseLeave}
+            onMouseDown={() => handleButtonMouseDown('notifications')}
+            onMouseUp={handleButtonMouseUp}
+          >
+            🔔
+          </button>
+
+          {/* Profile Avatar with Dropdown */}
+          <div style={styles.profileContainer}>
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              style={{
+                ...styles.profileButton,
+                ...(hoveredButton === 'profile' ? styles.profileButtonHover : {}),
+                ...(pressedButton === 'profile' ? styles.profileButtonPressed : {})
+              }}
+              onMouseEnter={() => handleButtonMouseEnter('profile')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('profile')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
+              <div style={styles.avatarSmall}>
+                {profileData.avatar_url ? (
+                  <img src={profileData.avatar_url} alt="Avatar" style={styles.avatarSmallImage} />
+                ) : (
+                  <span>👤</span>
+                )}
+              </div>
+            </button>
+
+            {/* Profile Dropdown Menu with 3 Buttons */}
+            {showProfileMenu && (
+              <div style={styles.dropdownMenu}>
+                <button 
+                  onClick={() => {
+                    setShowProfile(true);
+                    setShowProfileMenu(false);
+                  }}
+                  style={styles.menuItem}
+                >
+                  <span style={styles.menuIcon}>⚙️</span>
+                  Settings
+                </button>
+                
+                <button 
+                  onClick={handleThemeChange}
+                  style={styles.menuItem}
+                >
+                  <span style={styles.menuIcon}>🎨</span>
+                  Theme ({theme})
+                </button>
+                
+                <button 
+                  onClick={handleLogout}
+                  style={styles.menuItem}
+                >
+                  <span style={styles.menuIcon}>🚪</span>
+                  Logout
+                </button>
+
+                <button 
+                  onClick={handleDeleteAccount}
+                  style={{...styles.menuItem, ...styles.deleteItem}}
+                >
+                  <span style={styles.menuIcon}>🗑️</span>
+                  Delete Account
+                </button>
+              </div>
+            )}
           </div>
-        </button>
+        </div>
       </div>
     </nav>
   );
@@ -105,7 +200,7 @@ export default function Navbar({
 
 const styles = {
   navbar: {
-    background: 'linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)',
+    background: 'linear-gradient(90deg, #6366f1 0%, #2563EB 100%)',
     padding: '0.8rem 0',
     boxShadow: '0 4px 20px rgba(37, 99, 235, 0.3)',
     position: 'sticky',
@@ -122,12 +217,17 @@ const styles = {
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-  logoImage: {
-    height: '45px',
-    width: 'auto',
-    cursor: 'pointer',
-    filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.5))',
-    transition: 'all 0.3s ease',
+  logoContainer: {
+    background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
+  },
+  logoText: {
+    color: 'white',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    letterSpacing: '0.5px',
   },
   navButtons: {
     display: 'flex',
@@ -163,6 +263,36 @@ const styles = {
     color: 'white',
     boxShadow: '0 4px 12px rgba(255, 107, 53, 0.4)',
   },
+  rightSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+  },
+  notificationButton: {
+    background: 'rgba(255,255,255,0.15)',
+    border: 'none',
+    borderRadius: '50%',
+    width: '42px',
+    height: '42px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    fontSize: '20px',
+    transition: 'all 0.2s ease',
+  },
+  notificationButtonHover: {
+    background: 'rgba(255,255,255,0.25)',
+    transform: 'scale(1.1)',
+  },
+  notificationButtonPressed: {
+    transform: 'scale(0.95)',
+  },
+  
+  // Profile Container
+  profileContainer: {
+    position: 'relative',
+  },
   profileButton: {
     display: 'flex',
     alignItems: 'center',
@@ -178,11 +308,10 @@ const styles = {
   profileButtonHover: {
     background: 'rgba(46, 204, 113, 0.3)',
     borderColor: '#2ECC71',
-    transform: 'scale(1.05)',
+    transform: 'scale(1.02)',
   },
   profileButtonPressed: {
     transform: 'scale(0.98)',
-    background: 'rgba(46, 204, 113, 0.5)',
   },
   userName: {
     color: 'white',
@@ -208,5 +337,53 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+  },
+
+  // Dropdown Menu - 3 Buttons Design
+  dropdownMenu: {
+    position: 'absolute',
+    top: '50px',
+    right: 0,
+    width: '220px',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+    padding: '8px',
+    zIndex: 1000,
+    border: '1px solid rgba(0,0,0,0.05)',
+  },
+  menuItem: {
+    width: '100%',
+    padding: '12px 16px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#1e293b',
+    textAlign: 'left',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      backgroundColor: '#f1f5f9',
+      transform: 'translateX(5px)',
+    },
+  },
+  menuIcon: {
+    fontSize: '18px',
+    width: '24px',
+    textAlign: 'center',
+  },
+  deleteItem: {
+    color: '#ef4444',
+    borderTop: '1px solid #e2e8f0',
+    marginTop: '4px',
+    paddingTop: '12px',
+    ':hover': {
+      backgroundColor: '#fee2e2',
+    },
   },
 };

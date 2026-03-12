@@ -1,8 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
-import PeopleSection from './PeopleSection';
-import ChatWindow from '../components/ChatWindow';
+import React, { useState } from 'react';
 
 export default function CommunitySection({ 
   feedPosts,
@@ -33,13 +29,7 @@ export default function CommunitySection({
   handleButtonMouseDown,
   handleButtonMouseUp
 }) {
-  const { user } = useAuth();
   const [communityTab, setCommunityTab] = useState('home');
-  const [selectedChatUser, setSelectedChatUser] = useState(null);
-  const [showChat, setShowChat] = useState(false);
-  const [conversations, setConversations] = useState([]);
-  const [loadingConversations, setLoadingConversations] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   // Modern realistic tabs with glass morphism
   const tabs = [
@@ -80,42 +70,6 @@ export default function CommunitySection({
     }
   ];
 
-  useEffect(() => {
-    if (communityTab === 'chat') {
-      fetchConversations();
-    }
-  }, [communityTab]);
-
-  const fetchConversations = async () => {
-    setLoadingConversations(true);
-    try {
-      const response = await api.get('/messages/conversations');
-      if (response.data.success) {
-        setConversations(response.data.conversations);
-      }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    } finally {
-      setLoadingConversations(false);
-    }
-  };
-
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await api.get('/messages/unread/count');
-      if (response.data.success) {
-        setUnreadCount(response.data.unreadCount);
-      }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
-
-  const openChat = (chatUser) => {
-    setSelectedChatUser(chatUser);
-    setShowChat(true);
-  };
-
   return (
     <div style={styles.container}>
       {/* Welcome Header - Premium Gradient */}
@@ -148,9 +102,6 @@ export default function CommunitySection({
             title={tab.label}
           >
             <span style={styles.tabIcon}>{tab.icon}</span>
-            {tab.id === 'chat' && unreadCount > 0 && (
-              <span style={styles.unreadBadge}>{unreadCount}</span>
-            )}
           </button>
         ))}
       </div>
@@ -339,10 +290,54 @@ export default function CommunitySection({
 
         {/* PEOPLE TAB */}
         {communityTab === 'people' && (
-          <PeopleSection 
-            currentUser={user}
-            onStartChat={openChat}
-          />
+          <div style={styles.peopleContainer}>
+            <h2 style={styles.sectionTitle}>👥 People</h2>
+            
+            <div style={styles.contributorsSection}>
+              <h3 style={styles.subSectionTitle}>Top Contributors</h3>
+              {topContributors.map((contributor, index) => (
+                <div
+                  key={contributor.id}
+                  style={styles.contributorCard}
+                  onClick={() => handleViewProfile(contributor.id)}
+                >
+                  <div style={styles.rankBadge}>#{index + 1}</div>
+                  <div style={styles.avatar}>
+                    <span style={styles.avatarPlaceholder}>👤</span>
+                  </div>
+                  <div style={styles.contributorInfo}>
+                    <h4 style={styles.contributorName}>{contributor.full_name}</h4>
+                    <p style={styles.contributorStats}>
+                      {contributor.posts} posts
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={styles.eventsSection}>
+              <h3 style={styles.subSectionTitle}>Upcoming Events</h3>
+              {events.map(event => (
+                <div key={event.id} style={styles.eventCard}>
+                  <div style={styles.eventIcon}>📅</div>
+                  <div style={styles.eventInfo}>
+                    <h4 style={styles.eventTitle}>{event.title}</h4>
+                    <p style={styles.eventDate}>
+                      {new Date(event.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {!event.attending && (
+                    <button
+                      onClick={() => handleAttendEvent(event.id)}
+                      style={styles.attendButton}
+                    >
+                      Attend
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* CHAT TAB */}
@@ -350,42 +345,32 @@ export default function CommunitySection({
           <div style={styles.chatContainer}>
             <h2 style={styles.sectionTitle}>💬 Messages</h2>
             
-            {loadingConversations ? (
+            {loadingMessages ? (
               <div style={styles.loadingContainer}>
                 <div style={styles.loader}></div>
               </div>
-            ) : conversations.length === 0 ? (
+            ) : messages.length === 0 ? (
               <div style={styles.emptyState}>
-                <p>No conversations yet. Go to People tab to start chatting!</p>
+                <p>No messages yet. Start a conversation!</p>
               </div>
             ) : (
-              conversations.map(conv => (
+              messages.map(chat => (
                 <div
-                  key={conv.id}
-                  style={styles.conversationCard}
-                  onClick={() => openChat(conv.user)}
+                  key={chat.id}
+                  style={styles.chatCard}
+                  onClick={() => alert(`Open chat with ${chat.with_name}`)}
                 >
-                  <div style={styles.conversationAvatar}>
-                    {conv.user.avatar_url ? (
-                      <img src={conv.user.avatar_url} alt={conv.user.full_name} style={styles.avatarImage} />
-                    ) : (
-                      <span style={styles.avatarPlaceholder}>👤</span>
-                    )}
-                    <span style={{
-                      ...styles.statusDot,
-                      ...(conv.user.status === 'online' ? styles.online : styles.offline)
-                    }} />
+                  <div style={styles.chatAvatar}>👤</div>
+                  <div style={styles.chatInfo}>
+                    <h4 style={styles.chatName}>{chat.with_name}</h4>
+                    <p style={styles.chatPreview}>{chat.last_message}</p>
                   </div>
-                  <div style={styles.conversationInfo}>
-                    <h4 style={styles.conversationName}>{conv.user.full_name}</h4>
-                    <p style={styles.conversationPreview}>{conv.last_message}</p>
-                  </div>
-                  <div style={styles.conversationMeta}>
-                    <span style={styles.conversationTime}>
-                      {new Date(conv.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div style={styles.chatMeta}>
+                    <span style={styles.chatTime}>
+                      {new Date(chat.updated_at).toLocaleTimeString()}
                     </span>
-                    {conv.unread > 0 && (
-                      <span style={styles.unreadBadge}>{conv.unread}</span>
+                    {chat.unread > 0 && (
+                      <span style={styles.unreadBadge}>{chat.unread}</span>
                     )}
                   </div>
                 </div>
@@ -394,20 +379,6 @@ export default function CommunitySection({
           </div>
         )}
       </div>
-
-      {/* Chat Window */}
-      {showChat && selectedChatUser && (
-        <ChatWindow
-          user={selectedChatUser}
-          currentUser={user}
-          onClose={() => {
-            setShowChat(false);
-            setSelectedChatUser(null);
-            fetchConversations();
-            fetchUnreadCount();
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -509,19 +480,6 @@ const styles = {
     '@media (max-width: 480px)': {
       fontSize: '26px',
     },
-  },
-  unreadBadge: {
-    position: 'absolute',
-    top: '5px',
-    right: '10px',
-    backgroundColor: '#ef4444',
-    color: 'white',
-    fontSize: '10px',
-    fontWeight: '600',
-    padding: '2px 6px',
-    borderRadius: '10px',
-    minWidth: '18px',
-    textAlign: 'center',
   },
 
   // Content Area
@@ -858,11 +816,22 @@ const styles = {
     margin: 0,
   },
 
-  // Chat Tab Styles
-  chatContainer: {
+  // People Styles
+  peopleContainer: {
     width: '100%',
   },
-  conversationCard: {
+  contributorsSection: {
+    marginBottom: '35px',
+  },
+  subSectionTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 20px 0',
+    paddingBottom: '10px',
+    borderBottom: '2px solid #e2e8f0',
+  },
+  contributorCard: {
     display: 'flex',
     alignItems: 'center',
     gap: '15px',
@@ -879,53 +848,150 @@ const styles = {
       transform: 'translateX(5px)',
     },
   },
-  conversationAvatar: {
-    position: 'relative',
-    width: '50px',
-    height: '50px',
+  rankBadge: {
+    width: '30px',
+    height: '30px',
+    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    color: 'white',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    boxShadow: '0 4px 10px rgba(245,158,11,0.3)',
   },
-  conversationInfo: {
+  contributorInfo: {
     flex: 1,
   },
-  conversationName: {
+  contributorName: {
     fontSize: '16px',
     fontWeight: '600',
     color: '#1e293b',
     margin: '0 0 4px 0',
   },
-  conversationPreview: {
+  contributorStats: {
+    fontSize: '13px',
+    color: '#64748b',
+    margin: 0,
+  },
+  eventsSection: {
+    marginTop: '30px',
+  },
+  eventCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    padding: '15px',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    marginBottom: '10px',
+    boxShadow: '0 5px 15px rgba(0,0,0,0.03)',
+    border: '1px solid rgba(0,0,0,0.03)',
+  },
+  eventIcon: {
+    width: '45px',
+    height: '45px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
+  },
+  eventDate: {
+    fontSize: '13px',
+    color: '#64748b',
+    margin: 0,
+  },
+  attendButton: {
+    padding: '6px 16px',
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+
+  // Chat Styles
+  chatContainer: {
+    width: '100%',
+  },
+  chatCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    padding: '15px',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    marginBottom: '10px',
+    cursor: 'pointer',
+    boxShadow: '0 5px 15px rgba(0,0,0,0.03)',
+    border: '1px solid rgba(0,0,0,0.03)',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      backgroundColor: '#f8fafc',
+      transform: 'translateX(5px)',
+    },
+  },
+  chatAvatar: {
+    width: '50px',
+    height: '50px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '25px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '26px',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+  },
+  chatInfo: {
+    flex: 1,
+  },
+  chatName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
+  },
+  chatPreview: {
     fontSize: '14px',
     color: '#64748b',
     margin: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    maxWidth: '200px',
+    maxWidth: '250px',
   },
-  conversationMeta: {
+  chatMeta: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
     gap: '4px',
   },
-  conversationTime: {
-    fontSize: '11px',
+  chatTime: {
+    fontSize: '12px',
     color: '#94a3b8',
   },
-  statusDot: {
-    position: 'absolute',
-    bottom: '2px',
-    right: '2px',
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    border: '2px solid #ffffff',
-  },
-  online: {
-    backgroundColor: '#10b981',
-  },
-  offline: {
-    backgroundColor: '#94a3b8',
+  unreadBadge: {
+    backgroundColor: '#6366f1',
+    color: 'white',
+    borderRadius: '20px',
+    padding: '3px 8px',
+    fontSize: '11px',
+    fontWeight: '600',
   },
 
   // Loading States
