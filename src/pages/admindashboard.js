@@ -1,7 +1,7 @@
-/* eslint-disable no-dupe-keys, no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import SellerApplicationsManager from '../components/SellerApplicationsManager';
 
 export default function AdminDashboard() {
   const { user, signOut } = useAuth();
@@ -34,15 +34,15 @@ export default function AdminDashboard() {
     publishedCourses: 0
   });
 
-  // Seller applications state
-  const [sellerApplications, setSellerApplications] = useState([]);
-  const [loadingApps, setLoadingApps] = useState(false);
+  // UI state
+  const [activeTab, setActiveTab] = useState('courses'); // 'courses', 'users', 'applications', 'settings'
+  const [hoveredButton, setHoveredButton] = useState(null);
+  const [pressedButton, setPressedButton] = useState(null);
 
   useEffect(() => {
     fetchStats();
     fetchCourses();
     fetchCategories();
-    fetchSellerApplications();
   }, []);
 
   const fetchStats = async () => {
@@ -61,37 +61,17 @@ export default function AdminDashboard() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      console.log('📚 ========== FETCHING COURSES ==========');
-      console.log('📚 Making API request to /admin/courses...');
+      console.log('📚 Fetching courses...');
       
       const response = await api.get('/admin/courses');
       
-      console.log('📚 Response Status:', response.status);
-      console.log('📚 Response Data:', response.data);
-      
       if (response.data && response.data.success) {
-        console.log(`✅ SUCCESS! Loaded ${response.data.courses.length} courses`);
-        
-        if (response.data.courses.length > 0) {
-          console.log('📋 First course:', response.data.courses[0]);
-        } else {
-          console.log('⚠️ No courses returned from API');
-        }
-        
         setCourses(response.data.courses);
-      } else {
-        console.error('❌ API returned success: false', response.data);
       }
     } catch (error) {
-      console.error('❌ ERROR fetching courses:');
-      if (error.response) {
-        console.error('❌ Error response:', error.response.data);
-      } else {
-        console.error('❌ Error message:', error.message);
-      }
+      console.error('❌ Error fetching courses:', error);
     } finally {
       setLoading(false);
-      console.log('📚 ========== FETCH COMPLETE ==========');
     }
   };
 
@@ -103,20 +83,6 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchSellerApplications = async () => {
-    setLoadingApps(true);
-    try {
-      const response = await api.get('/admin/seller-applications');
-      if (response.data.success) {
-        setSellerApplications(response.data.applications);
-      }
-    } catch (error) {
-      console.error('Error fetching seller applications:', error);
-    } finally {
-      setLoadingApps(false);
     }
   };
 
@@ -321,7 +287,6 @@ export default function AdminDashboard() {
   const handlePublish = async () => {
     try {
       if (editingCourse) {
-        // Update existing course and publish
         const formData = new FormData();
         formData.append('title', courseData.title);
         formData.append('description', courseData.description);
@@ -356,7 +321,6 @@ export default function AdminDashboard() {
           fetchStats();
         }
       } else {
-        // Create new course and publish
         const formData = new FormData();
         formData.append('title', courseData.title);
         formData.append('description', courseData.description);
@@ -414,106 +378,65 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleApproveSeller = async (appId, userId) => {
-    const subaccount_code = prompt('Enter Paystack subaccount code for this seller:');
-    if (!subaccount_code) return;
-    try {
-      const response = await api.post(`/admin/seller-applications/${appId}/approve`, { subaccount_code });
-      if (response.data.success) {
-        alert('Seller approved');
-        fetchSellerApplications();
-      }
-    } catch (error) {
-      console.error('Error approving seller:', error);
-      alert('Approval failed');
-    }
-  };
-
-  const handleRejectSeller = async (appId) => {
-    if (!window.confirm('Reject this application?')) return;
-    try {
-      const response = await api.post(`/admin/seller-applications/${appId}/reject`);
-      if (response.data.success) {
-        alert('Application rejected');
-        fetchSellerApplications();
-      }
-    } catch (error) {
-      console.error('Error rejecting:', error);
-      alert('Rejection failed');
-    }
-  };
-
   const handleLogout = () => {
     signOut();
   };
 
-  // View course content
-  if (selectedCourse) {
+  // Button interaction handlers
+  const handleButtonMouseEnter = (buttonName) => {
+    setHoveredButton(buttonName);
+  };
+
+  const handleButtonMouseLeave = () => {
+    setHoveredButton(null);
+    setPressedButton(null);
+  };
+
+  const handleButtonMouseDown = (buttonName) => {
+    setPressedButton(buttonName);
+  };
+
+  const handleButtonMouseUp = () => {
+    setPressedButton(null);
+  };
+
+  // View course content modal
+  const renderCourseViewModal = () => {
+    if (!selectedCourse) return null;
+    
     return (
-      <div>
-        <nav style={styles.navbar}>
-          <div style={styles.navContainer}>
-            <img src="/images/logo.jpg" alt="StudyMart" style={styles.logoImage} />
-            <div style={styles.userInfo}>
-              <span style={styles.userName}>
-                Welcome, Admin {user?.profile?.full_name}!
-              </span>
-              <button onClick={handleLogout} style={styles.logoutButton}>
-                Logout
-              </button>
-            </div>
+      <div style={styles.modalOverlay} onClick={() => setSelectedCourse(null)}>
+        <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.modalHeader}>
+            <h2 style={styles.modalTitle}>{selectedCourse.title}</h2>
+            <button onClick={() => setSelectedCourse(null)} style={styles.closeButton}>×</button>
           </div>
-        </nav>
-
-        <div style={styles.container}>
-          <button onClick={() => setSelectedCourse(null)} style={styles.backButton}>
-            ← Back to Dashboard
-          </button>
-
-          <div style={styles.courseHeader}>
-            <h1 style={styles.courseTitle}>{selectedCourse.title}</h1>
-            <p style={styles.courseDescription}>{selectedCourse.description}</p>
-            <div style={styles.courseMeta}>
-              <span>Price: ${selectedCourse.price}</span>
-              <span>Level: {selectedCourse.level}</span>
-              <span>Status: <span style={{
-                color: selectedCourse.status === 'published' ? '#10b981' : 
-                       selectedCourse.status === 'draft' ? '#f59e0b' : '#6b7280'
-              }}>{selectedCourse.status}</span></span>
-            </div>
-            <button 
-              onClick={() => handleEditCourse(selectedCourse)} 
-              style={styles.editCourseButton}
-            >
-              ✏️ Edit Course
-            </button>
-          </div>
-
-          <div style={styles.contentSection}>
+          <div style={styles.modalBody}>
+            <p><strong>Description:</strong> {selectedCourse.description}</p>
+            <p><strong>Price:</strong> ${selectedCourse.price}</p>
+            <p><strong>Level:</strong> {selectedCourse.level}</p>
+            <p><strong>Status:</strong> {selectedCourse.status}</p>
+            
             <h3>Videos ({courseContent.videos?.length || 0})</h3>
-            <div style={styles.videoList}>
-              {courseContent.videos?.map((video, index) => (
-                <div key={video.id} style={styles.contentItem}>
-                  <span>🎬 {video.title}</span>
-                </div>
+            <div style={styles.contentList}>
+              {courseContent.videos?.map(v => (
+                <div key={v.id} style={styles.contentItem}>🎬 {v.title}</div>
               ))}
             </div>
 
             <h3>PDFs ({courseContent.pdfs?.length || 0})</h3>
-            <div style={styles.pdfList}>
-              {courseContent.pdfs?.map((pdf, index) => (
-                <div key={pdf.id} style={styles.contentItem}>
-                  <span>📄 {pdf.title}</span>
-                </div>
+            <div style={styles.contentList}>
+              {courseContent.pdfs?.map(p => (
+                <div key={p.id} style={styles.contentItem}>📄 {p.title}</div>
               ))}
             </div>
 
             <h3>Q&A ({courseContent.qas?.length || 0})</h3>
-            <div style={styles.qaList}>
-              {courseContent.qas?.map((qa, index) => (
-                <div key={qa.id} style={styles.qaItem}>
-                  <p><strong>Q{index + 1}:</strong> {qa.question}</p>
-                  <p><strong>A:</strong> {qa.answer}</p>
+            <div style={styles.contentList}>
+              {courseContent.qas?.map((q, i) => (
+                <div key={q.id} style={styles.contentItem}>
+                  <strong>Q{i+1}:</strong> {q.question}<br/>
+                  <strong>A:</strong> {q.answer}
                 </div>
               ))}
             </div>
@@ -521,9 +444,9 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
-  }
+  };
 
-  // Wizard
+  // Course creation wizard
   const renderWizard = () => (
     <div style={styles.wizardOverlay}>
       <div style={styles.wizardModal}>
@@ -723,15 +646,59 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div>
+    <div style={styles.appContainer}>
+      {/* Navigation */}
       <nav style={styles.navbar}>
         <div style={styles.navContainer}>
-          <img src="/images/logo.jpg" alt="StudyMart" style={styles.logoImage} />
+          <div style={styles.logoContainer}>
+            <span style={styles.logoText}>Study Mart Admin</span>
+          </div>
+          <div style={styles.navTabs}>
+            <button
+              style={{
+                ...styles.navTab,
+                ...(activeTab === 'courses' ? styles.navTabActive : {}),
+                ...(hoveredButton === 'tab-courses' ? styles.navTabHover : {}),
+                ...(pressedButton === 'tab-courses' ? styles.navTabPressed : {})
+              }}
+              onClick={() => setActiveTab('courses')}
+              onMouseEnter={() => handleButtonMouseEnter('tab-courses')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('tab-courses')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              📚 Courses
+            </button>
+            <button
+              style={{
+                ...styles.navTab,
+                ...(activeTab === 'applications' ? styles.navTabActive : {}),
+                ...(hoveredButton === 'tab-applications' ? styles.navTabHover : {}),
+                ...(pressedButton === 'tab-applications' ? styles.navTabPressed : {})
+              }}
+              onClick={() => setActiveTab('applications')}
+              onMouseEnter={() => handleButtonMouseEnter('tab-applications')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('tab-applications')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              📝 Seller Applications
+            </button>
+          </div>
           <div style={styles.userInfo}>
-            <span style={styles.userName}>
-              Welcome, Admin {user?.profile?.full_name}!
-            </span>
-            <button onClick={handleLogout} style={styles.logoutButton}>
+            <span style={styles.userName}>Admin: {user?.profile?.full_name}</span>
+            <button
+              onClick={handleLogout}
+              style={{
+                ...styles.logoutButton,
+                ...(hoveredButton === 'logout' ? styles.logoutButtonHover : {}),
+                ...(pressedButton === 'logout' ? styles.logoutButtonPressed : {})
+              }}
+              onMouseEnter={() => handleButtonMouseEnter('logout')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('logout')}
+              onMouseUp={handleButtonMouseUp}
+            >
               Logout
             </button>
           </div>
@@ -739,13 +706,7 @@ export default function AdminDashboard() {
       </nav>
 
       <div style={styles.container}>
-        <div style={styles.header}>
-          <h2 style={styles.pageTitle}>Admin Dashboard</h2>
-          <button onClick={() => setShowWizard(true)} style={styles.createButton}>
-            + Create New Course
-          </button>
-        </div>
-
+        {/* Stats Cards - Always visible */}
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
             <h3 style={styles.statNumber}>{stats.totalUsers}</h3>
@@ -765,132 +726,180 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <h3 style={styles.subTitle}>All Courses</h3>
-        <div style={styles.coursesList}>
-          {loading ? (
-            <p>Loading courses...</p>
-          ) : courses.length === 0 ? (
-            <div style={styles.emptyState}>
-              <p>No courses found. Click "Create New Course" to get started!</p>
+        {/* Tab Content */}
+        {activeTab === 'courses' && (
+          <div style={styles.tabContent}>
+            <div style={styles.header}>
+              <h2 style={styles.pageTitle}>📚 Course Management</h2>
+              <button
+                onClick={() => setShowWizard(true)}
+                style={{
+                  ...styles.createButton,
+                  ...(hoveredButton === 'create-course' ? styles.createButtonHover : {}),
+                  ...(pressedButton === 'create-course' ? styles.createButtonPressed : {})
+                }}
+                onMouseEnter={() => handleButtonMouseEnter('create-course')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('create-course')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                + Create New Course
+              </button>
             </div>
-          ) : (
-            courses.map(course => (
-              <div key={course.id} style={styles.courseItem}>
-                <img 
-                  src={course.thumbnail_url || 'https://picsum.photos/100/60?random=1'}
-                  alt={course.title}
-                  style={styles.courseThumb}
-                />
-                <div style={styles.courseDetails}>
-                  <h4 style={styles.courseTitle}>{course.title}</h4>
-                  <p style={styles.courseMeta}>
-                    Price: ${course.price} | Level: {course.level} | 
-                    Status: <span style={{
-                      color: course.status === 'published' ? '#10b981' : 
-                             course.status === 'draft' ? '#f59e0b' : '#6b7280'
-                    }}>{course.status}</span>
-                  </p>
-                  <p style={styles.courseContentMeta}>
-                    📹 {course.video_count || 0} videos | 📄 {course.pdf_count || 0} PDFs | 💬 {course.qa_count || 0} Q&A
-                  </p>
-                </div>
-                <div style={styles.courseActions}>
-                  <button 
-                    onClick={() => handleViewCourse(course)} 
-                    style={styles.viewButton}
-                  >
-                    👁️ View
-                  </button>
-                  <button 
-                    onClick={() => handleEditCourse(course)} 
-                    style={styles.editButton}
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteCourse(course.id)} 
-                    style={styles.deleteButton}
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
 
-        {/* Seller Applications Section */}
-        <div style={styles.section}>
-          <h3 style={styles.subTitle}>Seller Applications</h3>
-          {loadingApps ? (
-            <p>Loading applications...</p>
-          ) : sellerApplications.length === 0 ? (
-            <p style={styles.emptyMessage}>No seller applications</p>
-          ) : (
-            sellerApplications.map(app => (
-              <div key={app.id} style={styles.applicationCard}>
-                <div style={styles.applicationHeader}>
-                  <strong>{app.full_name}</strong> ({app.business_name})
+            <div style={styles.coursesList}>
+              {loading ? (
+                <div style={styles.loadingContainer}>
+                  <div style={styles.loader}></div>
+                  <p>Loading courses...</p>
                 </div>
-                <p><strong>Email:</strong> {app.user?.email}</p>
-                <p><strong>Category:</strong> {app.category}</p>
-                <p><strong>Location:</strong> {app.location}</p>
-                <p><strong>Payment Details:</strong> {app.payment_details}</p>
-                <p><strong>Status:</strong> 
-                  <span style={{
-                    color: app.status === 'approved' ? '#10b981' : 
-                           app.status === 'rejected' ? '#dc2626' : '#f59e0b',
-                    fontWeight: 'bold',
-                    marginLeft: '5px'
-                  }}>
-                    {app.status}
-                  </span>
-                </p>
-                {app.status === 'pending' && app.fee_paid && (
-                  <div style={styles.applicationActions}>
-                    <button 
-                      onClick={() => handleApproveSeller(app.id, app.user_id)}
-                      style={styles.approveButton}
-                    >
-                      Approve
-                    </button>
-                    <button 
-                      onClick={() => handleRejectSeller(app.id)}
-                      style={styles.rejectButton}
-                    >
-                      Reject
-                    </button>
+              ) : courses.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <p>No courses found. Click "Create New Course" to get started!</p>
+                </div>
+              ) : (
+                courses.map(course => (
+                  <div key={course.id} style={styles.courseCard}>
+                    <img 
+                      src={course.thumbnail_url || 'https://via.placeholder.com/100x60?text=Course'}
+                      alt={course.title}
+                      style={styles.courseThumb}
+                    />
+                    <div style={styles.courseDetails}>
+                      <h4 style={styles.courseTitle}>{course.title}</h4>
+                      <p style={styles.courseMeta}>
+                        Price: ${course.price} | Level: {course.level} | 
+                        Status: <span style={{
+                          color: course.status === 'published' ? '#10b981' : 
+                                 course.status === 'draft' ? '#f59e0b' : '#6b7280',
+                          fontWeight: 'bold'
+                        }}>{course.status}</span>
+                      </p>
+                      <p style={styles.courseContentMeta}>
+                        📹 {course.video_count || 0} videos | 📄 {course.pdf_count || 0} PDFs | 💬 {course.qa_count || 0} Q&A
+                      </p>
+                    </div>
+                    <div style={styles.courseActions}>
+                      <button
+                        onClick={() => handleViewCourse(course)}
+                        style={{
+                          ...styles.actionButton,
+                          ...styles.viewButton,
+                          ...(hoveredButton === `view-${course.id}` ? styles.actionButtonHover : {})
+                        }}
+                        onMouseEnter={() => handleButtonMouseEnter(`view-${course.id}`)}
+                        onMouseLeave={handleButtonMouseLeave}
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleEditCourse(course)}
+                        style={{
+                          ...styles.actionButton,
+                          ...styles.editButton,
+                          ...(hoveredButton === `edit-${course.id}` ? styles.actionButtonHover : {})
+                        }}
+                        onMouseEnter={() => handleButtonMouseEnter(`edit-${course.id}`)}
+                        onMouseLeave={handleButtonMouseLeave}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCourse(course.id)}
+                        style={{
+                          ...styles.actionButton,
+                          ...styles.deleteButton,
+                          ...(hoveredButton === `delete-${course.id}` ? styles.actionButtonHover : {})
+                        }}
+                        onMouseEnter={() => handleButtonMouseEnter(`delete-${course.id}`)}
+                        onMouseLeave={handleButtonMouseLeave}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'applications' && (
+          <div style={styles.tabContent}>
+            <h2 style={styles.pageTitle}>📝 Seller Applications</h2>
+            <SellerApplicationsManager />
+          </div>
+        )}
       </div>
 
+      {/* Modals */}
       {showWizard && renderWizard()}
+      {selectedCourse && renderCourseViewModal()}
     </div>
   );
 }
 
 const styles = {
+  appContainer: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  },
   navbar: {
-    backgroundColor: '#dc2626',
-    padding: '0.5rem 0',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    background: 'linear-gradient(90deg, #dc2626 0%, #b91c1c 100%)',
+    padding: '1rem 0',
+    boxShadow: '0 4px 20px rgba(220,38,38,0.3)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
   },
   navContainer: {
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
     padding: '0 20px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
-  logoImage: {
-    height: '40px',
-    width: 'auto',
+  logoContainer: {
+    background: 'rgba(255,255,255,0.2)',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    border: '1px solid rgba(255,255,255,0.3)',
+  },
+  logoText: {
+    color: 'white',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    letterSpacing: '0.5px',
+  },
+  navTabs: {
+    display: 'flex',
+    gap: '10px',
+  },
+  navTab: {
+    padding: '10px 20px',
+    background: 'rgba(255,255,255,0.1)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: '500',
     cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  navTabHover: {
+    background: 'rgba(255,255,255,0.2)',
+    transform: 'translateY(-2px)',
+  },
+  navTabPressed: {
+    transform: 'translateY(2px) scale(0.98)',
+  },
+  navTabActive: {
+    background: 'white',
+    color: '#dc2626',
+    fontWeight: '600',
   },
   userInfo: {
     display: 'flex',
@@ -899,41 +908,30 @@ const styles = {
   },
   userName: {
     color: 'white',
-    fontSize: '16px',
+    fontSize: '15px',
+    fontWeight: '500',
   },
   logoutButton: {
-    backgroundColor: 'transparent',
-    border: '1px solid white',
-    color: 'white',
     padding: '8px 16px',
-    borderRadius: '4px',
+    background: 'rgba(255,255,255,0.1)',
+    color: 'white',
+    border: '1px solid rgba(255,255,255,0.3)',
+    borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '14px',
+    transition: 'all 0.2s ease',
+  },
+  logoutButtonHover: {
+    background: 'rgba(255,255,255,0.2)',
+    transform: 'translateY(-2px)',
+  },
+  logoutButtonPressed: {
+    transform: 'translateY(2px) scale(0.98)',
   },
   container: {
-    maxWidth: '1200px',
-    margin: '40px auto',
+    maxWidth: '1400px',
+    margin: '30px auto',
     padding: '0 20px',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px',
-  },
-  pageTitle: {
-    fontSize: '28px',
-    color: '#333',
-    margin: 0,
-  },
-  createButton: {
-    padding: '10px 20px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
   },
   statsGrid: {
     display: 'grid',
@@ -942,52 +940,84 @@ const styles = {
     marginBottom: '30px',
   },
   statCard: {
-    backgroundColor: 'white',
+    background: 'white',
     padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
     textAlign: 'center',
+    border: '1px solid #e2e8f0',
   },
   statNumber: {
     fontSize: '32px',
+    fontWeight: '700',
     color: '#dc2626',
     margin: '0 0 10px 0',
   },
   statLabel: {
     fontSize: '14px',
-    color: '#666',
+    color: '#64748b',
     margin: 0,
   },
-  subTitle: {
-    fontSize: '20px',
-    marginBottom: '15px',
-    color: '#333',
+  tabContent: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '25px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '25px',
+  },
+  pageTitle: {
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: 0,
+  },
+  createButton: {
+    padding: '10px 20px',
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+  },
+  createButtonHover: {
+    transform: 'translateY(-2px) scale(1.02)',
+    boxShadow: '0 8px 20px rgba(16,185,129,0.4)',
+  },
+  createButtonPressed: {
+    transform: 'translateY(2px) scale(0.98)',
   },
   coursesList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: '15px',
   },
-  emptyState: {
-    textAlign: 'center',
-    padding: '60px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-    color: '#666',
-  },
-  courseItem: {
+  courseCard: {
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'white',
+    background: '#f8fafc',
     padding: '15px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    borderRadius: '10px',
+    border: '1px solid #e2e8f0',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      borderColor: '#dc2626',
+      boxShadow: '0 4px 12px rgba(220,38,38,0.1)',
+    },
   },
   courseThumb: {
     width: '100px',
     height: '60px',
     objectFit: 'cover',
-    borderRadius: '4px',
+    borderRadius: '6px',
     marginRight: '15px',
   },
   courseDetails: {
@@ -995,115 +1025,131 @@ const styles = {
   },
   courseTitle: {
     fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
     marginBottom: '5px',
-    color: '#333',
   },
   courseMeta: {
     fontSize: '13px',
-    color: '#666',
+    color: '#64748b',
     marginBottom: '5px',
   },
   courseContentMeta: {
     fontSize: '12px',
-    color: '#888',
+    color: '#94a3b8',
   },
   courseActions: {
     display: 'flex',
-    gap: '10px',
+    gap: '8px',
+  },
+  actionButton: {
+    padding: '6px 12px',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  actionButtonHover: {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
   },
   viewButton: {
-    padding: '6px 12px',
-    backgroundColor: '#6366f1',
+    background: '#6366f1',
     color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
   },
   editButton: {
-    padding: '6px 12px',
-    backgroundColor: '#f59e0b',
+    background: '#f59e0b',
     color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
   },
   deleteButton: {
-    padding: '6px 12px',
-    backgroundColor: '#dc2626',
+    background: '#ef4444',
     color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
   },
-  backButton: {
-    padding: '10px 20px',
-    backgroundColor: '#6b7280',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '60px',
+  },
+  loader: {
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #dc2626',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    animation: 'spin 1s linear infinite',
     marginBottom: '20px',
   },
-  courseHeader: {
-    marginBottom: '30px',
+  emptyState: {
+    textAlign: 'center',
+    padding: '60px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    color: '#64748b',
   },
-  courseDescription: {
-    fontSize: '16px',
-    color: '#666',
-    marginBottom: '15px',
-    lineHeight: '1.6',
-  },
-  courseMeta: {
+
+  // Modal Styles
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.5)',
     display: 'flex',
-    gap: '20px',
-    fontSize: '14px',
-    color: '#888',
-    marginBottom: '20px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(5px)',
   },
-  editCourseButton: {
-    padding: '10px 20px',
-    backgroundColor: '#f59e0b',
-    color: 'white',
+  modalContent: {
+    background: 'white',
+    borderRadius: '16px',
+    width: '90%',
+    maxWidth: '600px',
+    maxHeight: '80vh',
+    overflow: 'auto',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+  },
+  modalHeader: {
+    padding: '20px 25px',
+    borderBottom: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: '#f8fafc',
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: 0,
+  },
+  closeButton: {
+    background: 'none',
     border: 'none',
-    borderRadius: '4px',
+    fontSize: '24px',
     cursor: 'pointer',
-    fontSize: '14px',
+    color: '#64748b',
+    ':hover': {
+      color: '#dc2626',
+    },
   },
-  contentSection: {
-    marginTop: '30px',
+  modalBody: {
+    padding: '25px',
   },
-  videoList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginBottom: '30px',
-  },
-  pdfList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginBottom: '30px',
-  },
-  qaList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-    marginBottom: '30px',
+  contentList: {
+    marginBottom: '20px',
   },
   contentItem: {
     padding: '10px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '4px',
-    marginBottom: '5px',
-  },
-  qaItem: {
-    padding: '15px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '4px',
+    background: '#f8fafc',
+    borderRadius: '6px',
+    marginBottom: '8px',
+    fontSize: '14px',
   },
 
   // Wizard Styles
@@ -1113,57 +1159,52 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    background: 'rgba(0,0,0,0.5)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
+    backdropFilter: 'blur(5px)',
   },
   wizardModal: {
-    backgroundColor: 'white',
-    borderRadius: '8px',
+    background: 'white',
+    borderRadius: '16px',
     width: '90%',
     maxWidth: '800px',
     maxHeight: '90vh',
     overflow: 'auto',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
   },
   wizardHeader: {
-    padding: '20px',
-    borderBottom: '1px solid #ddd',
+    padding: '20px 25px',
+    borderBottom: '1px solid #e2e8f0',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#666',
+    background: '#f8fafc',
   },
   wizardSteps: {
     display: 'flex',
     padding: '20px',
     gap: '10px',
-    borderBottom: '1px solid #eee',
+    borderBottom: '1px solid #e2e8f0',
   },
   step: {
     flex: 1,
     padding: '10px',
     textAlign: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: '4px',
+    background: '#f1f5f9',
+    borderRadius: '8px',
     fontSize: '14px',
+    fontWeight: '500',
+    color: '#64748b',
   },
   stepActive: {
-    backgroundColor: '#6366f1',
+    background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
     color: 'white',
   },
   wizardContent: {
-    padding: '20px',
-    maxHeight: '60vh',
-    overflow: 'auto',
+    padding: '25px',
   },
   stepContent: {
     display: 'flex',
@@ -1171,27 +1212,42 @@ const styles = {
     gap: '15px',
   },
   input: {
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
+    padding: '12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
     fontSize: '14px',
+    ':focus': {
+      outline: 'none',
+      borderColor: '#dc2626',
+      boxShadow: '0 0 0 3px rgba(220,38,38,0.1)',
+    },
   },
   textarea: {
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
+    padding: '12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
     fontSize: '14px',
     resize: 'vertical',
+    ':focus': {
+      outline: 'none',
+      borderColor: '#dc2626',
+      boxShadow: '0 0 0 3px rgba(220,38,38,0.1)',
+    },
   },
   select: {
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
+    padding: '12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
     fontSize: '14px',
+    ':focus': {
+      outline: 'none',
+      borderColor: '#dc2626',
+      boxShadow: '0 0 0 3px rgba(220,38,38,0.1)',
+    },
   },
   uploadArea: {
-    border: '2px dashed #ddd',
-    borderRadius: '4px',
+    border: '2px dashed #e2e8f0',
+    borderRadius: '8px',
     padding: '30px',
     textAlign: 'center',
   },
@@ -1199,47 +1255,56 @@ const styles = {
     display: 'none',
   },
   uploadLabel: {
-    backgroundColor: '#f5f5f5',
     padding: '10px 20px',
-    borderRadius: '4px',
+    background: '#f1f5f9',
+    borderRadius: '6px',
     cursor: 'pointer',
-    display: 'inline-block',
-  },
-  contentList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginTop: '15px',
+    fontSize: '14px',
+    ':hover': {
+      background: '#e2e8f0',
+    },
   },
   removeButton: {
     background: 'none',
     border: 'none',
     fontSize: '18px',
     cursor: 'pointer',
-    color: '#dc2626',
+    color: '#ef4444',
   },
   addButton: {
     padding: '10px',
-    backgroundColor: '#10b981',
+    background: '#10b981',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '14px',
     alignSelf: 'flex-start',
+  },
+  qaList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px',
+    marginTop: '15px',
+  },
+  qaItem: {
+    padding: '15px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
   },
   qaInput: {
     width: '100%',
     padding: '8px',
     marginBottom: '10px',
-    border: '1px solid #ddd',
+    border: '1px solid #e2e8f0',
     borderRadius: '4px',
   },
   qaTextarea: {
     width: '100%',
     padding: '8px',
     marginBottom: '10px',
-    border: '1px solid #ddd',
+    border: '1px solid #e2e8f0',
     borderRadius: '4px',
     resize: 'vertical',
   },
@@ -1252,49 +1317,54 @@ const styles = {
   },
   saveButton: {
     padding: '5px 10px',
-    backgroundColor: '#10b981',
+    background: '#10b981',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
+    fontSize: '12px',
   },
   deleteButton: {
     padding: '5px 10px',
-    backgroundColor: '#dc2626',
+    background: '#ef4444',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
+    fontSize: '12px',
   },
   editButton: {
     padding: '5px 10px',
-    backgroundColor: '#6366f1',
+    background: '#6366f1',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
+    fontSize: '12px',
   },
   wizardFooter: {
-    padding: '20px',
-    borderTop: '1px solid #ddd',
+    padding: '20px 25px',
+    borderTop: '1px solid #e2e8f0',
     display: 'flex',
     justifyContent: 'space-between',
   },
   prevButton: {
     padding: '10px 20px',
-    backgroundColor: '#6b7280',
+    background: '#64748b',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '8px',
     cursor: 'pointer',
+    fontSize: '14px',
   },
   nextButton: {
     padding: '10px 20px',
-    backgroundColor: '#6366f1',
+    background: '#6366f1',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '8px',
     cursor: 'pointer',
+    fontSize: '14px',
   },
   publishActions: {
     display: 'flex',
@@ -1302,72 +1372,43 @@ const styles = {
   },
   cancelButton: {
     padding: '10px 20px',
-    backgroundColor: '#6b7280',
+    background: '#64748b',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '8px',
     cursor: 'pointer',
+    fontSize: '14px',
   },
   draftButton: {
     padding: '10px 20px',
-    backgroundColor: '#f59e0b',
+    background: '#f59e0b',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '8px',
     cursor: 'pointer',
+    fontSize: '14px',
   },
   publishButton: {
     padding: '10px 20px',
-    backgroundColor: '#10b981',
+    background: '#10b981',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-
-  // Seller Application Styles
-  section: {
-    marginTop: '30px',
-  },
-  emptyMessage: {
-    textAlign: 'center',
-    padding: '20px',
-    color: '#666',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '4px',
-  },
-  applicationCard: {
-    border: '1px solid #ddd',
-    padding: '15px',
     borderRadius: '8px',
-    marginBottom: '10px',
-    backgroundColor: '#f9f9f9',
-  },
-  applicationHeader: {
-    fontSize: '16px',
-    marginBottom: '10px',
-  },
-  applicationActions: {
-    display: 'flex',
-    gap: '10px',
-    marginTop: '10px',
-  },
-  approveButton: {
-    padding: '6px 12px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '13px',
-  },
-  rejectButton: {
-    padding: '6px 12px',
-    backgroundColor: '#dc2626',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: '14px',
   },
 };
+
+// Global animations
+const globalStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = globalStyles;
+  document.head.appendChild(style);
+}
