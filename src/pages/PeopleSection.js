@@ -1,54 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import realtimeService from '../services/realtime';
-import ChatWindow from '../components/ChatWindow';
 
-export default function PeopleSection({ currentUser }) {
+export default function PeopleSection({ currentUser, onStartChat }) {
   const [people, setPeople] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
   const [friendRequests, setFriendRequests] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [showChat, setShowChat] = useState(false);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'friends', 'requests'
 
   useEffect(() => {
     fetchPeople();
     fetchFriendRequests();
-    setupRealtime();
-
-    return () => {
-      realtimeService.cleanup();
-    };
+    fetchSentRequests();
   }, []);
 
-  const setupRealtime = () => {
-    realtimeService.setCurrentUser(currentUser);
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchPeople();
+    }, 500);
 
-    // Subscribe to presence (online/offline)
-    realtimeService.subscribeToPresence([], (presence) => {
-      if (presence.type === 'join') {
-        setOnlineUsers(prev => new Set([...prev, presence.userId]));
-      } else if (presence.type === 'leave') {
-        setOnlineUsers(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(presence.userId);
-          return newSet;
-        });
-      } else {
-        // Full presence sync
-        const online = new Set();
-        Object.keys(presence).forEach(key => {
-          presence[key].forEach(p => online.add(p.user_id));
-        });
-        setOnlineUsers(online);
-      }
-    });
-  };
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
 
   const fetchPeople = async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/users/people');
+      const response = await api.get('/friends/people', {
+        params: { search: searchTerm }
+      });
       if (response.data.success) {
         setPeople(response.data.users);
       }
@@ -70,12 +50,23 @@ export default function PeopleSection({ currentUser }) {
     }
   };
 
+  const fetchSentRequests = async () => {
+    try {
+      const response = await api.get('/friends/sent');
+      if (response.data.success) {
+        setSentRequests(response.data.requests);
+      }
+    } catch (error) {
+      console.error('Error fetching sent requests:', error);
+    }
+  };
+
   const sendFriendRequest = async (userId) => {
     try {
       const response = await api.post('/friends/request', { receiver_id: userId });
       if (response.data.success) {
-        alert('Friend request sent!');
         fetchPeople();
+        fetchSentRequests();
       }
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -87,7 +78,6 @@ export default function PeopleSection({ currentUser }) {
     try {
       const response = await api.put(`/friends/request/${requestId}/accept`);
       if (response.data.success) {
-        alert('Friend request accepted!');
         fetchFriendRequests();
         fetchPeople();
       }
@@ -100,7 +90,6 @@ export default function PeopleSection({ currentUser }) {
     try {
       const response = await api.put(`/friends/request/${requestId}/reject`);
       if (response.data.success) {
-        alert('Friend request rejected');
         fetchFriendRequests();
       }
     } catch (error) {
@@ -108,26 +97,31 @@ export default function PeopleSection({ currentUser }) {
     }
   };
 
-  const startChat = (user) => {
-    setSelectedUser(user);
-    setShowChat(true);
+  const getFilteredPeople = () => {
+    if (activeTab === 'friends') {
+      return people.filter(p => p.friend_status === 'friends');
+    }
+    return people;
   };
 
-  const filteredPeople = people.filter(person =>
-    person.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPeople = getFilteredPeople();
 
   return (
     <div style={styles.container}>
       {/* Friend Requests Section */}
       {friendRequests.length > 0 && (
         <div style={styles.requestsSection}>
-          <h3 style={styles.sectionTitle}>Friend Requests</h3>
+          <h3 style={styles.sectionTitle}>Friend Requests ({friendRequests.length})</h3>
           {friendRequests.map(request => (
             <div key={request.id} style={styles.requestCard}>
               <div style={styles.requestInfo}>
-                <div style={styles.requestAvatar}>👤</div>
+                <div style={styles.requestAvatar}>
+                  {request.sender?.avatar_url ? (
+                    <img src={request.sender.avatar_url} alt={request.sender.full_name} style={styles.avatarImage} />
+                  ) : (
+                    <span style={styles.avatarPlaceholder}>👤</span>
+                  )}
+                </div>
                 <div>
                   <h4 style={styles.requestName}>{request.sender?.full_name}</h4>
                   <p style={styles.requestEmail}>{request.sender?.email}</p>
@@ -138,19 +132,46 @@ export default function PeopleSection({ currentUser }) {
                   onClick={() => acceptFriendRequest(request.id)}
                   style={styles.acceptButton}
                 >
-                  Accept
+                  ✓ Accept
                 </button>
                 <button
                   onClick={() => rejectFriendRequest(request.id)}
                   style={styles.rejectButton}
                 >
-                  Reject
+                  ✗ Reject
                 </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Tabs */}
+      <div style={styles.tabBar}>
+        <button
+          style={{
+            ...styles.tab,
+            ...(activeTab === 'all' ? styles.activeTab : {})
+          }}
+          onClick={() => setActiveTab('all')}
+        >
+          All People ({people.length})
+        </button>
+        <button
+          style={{
+            ...styles.tab,
+            ...(activeTab === 'friends' ? styles.activeTab : {})
+          }}
+          onClick={() => setActiveTab('friends')}
+        >
+          Friends ({people.filter(p => p.friend_status === 'friends').length})
+        </button>
+        {sentRequests.length > 0 && (
+          <span style={styles.sentBadge}>
+            {sentRequests.length} pending
+          </span>
+        )}
+      </div>
 
       {/* Search Bar */}
       <div style={styles.searchSection}>
@@ -188,35 +209,39 @@ export default function PeopleSection({ currentUser }) {
                   </div>
                   <span style={{
                     ...styles.statusDot,
-                    ...(onlineUsers.has(person.id) ? styles.online : styles.offline)
+                    ...(person.online ? styles.online : styles.offline)
                   }} />
                 </div>
                 <h4 style={styles.personName}>{person.full_name}</h4>
                 <p style={styles.personRole}>{person.role || 'Student'}</p>
+                {person.friend_status === 'friends' && (
+                  <span style={styles.friendsBadge}>✓ Friends</span>
+                )}
               </div>
               
-              <div style={styles.personStats}>
-                <span>📚 {person.courses_count || 0} courses</span>
-                <span>👥 {person.friends_count || 0} friends</span>
-              </div>
-
               <div style={styles.personActions}>
-                {person.friend_status === 'pending' ? (
-                  <span style={styles.pendingBadge}>Request Sent</span>
-                ) : person.friend_status === 'accepted' ? (
-                  <button
-                    onClick={() => startChat(person)}
-                    style={styles.messageButton}
-                  >
-                    💬 Message
-                  </button>
-                ) : (
+                <button
+                  onClick={() => onStartChat(person)}
+                  style={styles.messageButton}
+                >
+                  💬 Message
+                </button>
+                
+                {person.friend_status === 'none' && (
                   <button
                     onClick={() => sendFriendRequest(person.id)}
-                    style={styles.addFriendButton}
+                    style={styles.addButton}
                   >
                     ➕ Add Friend
                   </button>
+                )}
+                
+                {person.friend_status === 'pending' && (
+                  <span style={styles.pendingBadge}>⏳ Request Sent</span>
+                )}
+                
+                {person.friend_status === 'friends' && (
+                  <span style={styles.friendsBadge}>✓ Friend</span>
                 )}
               </div>
             </div>
@@ -224,13 +249,23 @@ export default function PeopleSection({ currentUser }) {
         )}
       </div>
 
-      {/* Chat Window */}
-      {showChat && selectedUser && (
-        <ChatWindow
-          user={selectedUser}
-          onClose={() => setShowChat(false)}
-          currentUser={currentUser}
-        />
+      {/* Sent Requests Section */}
+      {sentRequests.length > 0 && (
+        <div style={styles.sentSection}>
+          <h3 style={styles.sectionTitle}>Sent Requests</h3>
+          {sentRequests.map(request => (
+            <div key={request.id} style={styles.sentCard}>
+              <div style={styles.sentInfo}>
+                <div style={styles.sentAvatar}>👤</div>
+                <div>
+                  <h4 style={styles.sentName}>{request.receiver?.full_name}</h4>
+                  <p style={styles.sentEmail}>{request.receiver?.email}</p>
+                </div>
+              </div>
+              <span style={styles.pendingBadge}>Pending</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -276,23 +311,23 @@ const styles = {
   requestAvatar: {
     width: '40px',
     height: '40px',
-    backgroundColor: '#e2e8f0',
     borderRadius: '20px',
+    backgroundColor: '#e2e8f0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '20px',
+    overflow: 'hidden',
   },
   requestName: {
     fontSize: '15px',
     fontWeight: '600',
     color: '#1e293b',
-    margin: 0,
+    margin: '0 0 4px 0',
   },
   requestEmail: {
     fontSize: '12px',
     color: '#64748b',
-    margin: '4px 0 0 0',
+    margin: 0,
   },
   requestActions: {
     display: 'flex',
@@ -323,13 +358,46 @@ const styles = {
     },
   },
 
+  // Tabs
+  tabBar: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px',
+    position: 'relative',
+  },
+  tab: {
+    padding: '10px 20px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    fontSize: '15px',
+    fontWeight: '500',
+    color: '#64748b',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  activeTab: {
+    color: '#6366f1',
+    borderBottomColor: '#6366f1',
+  },
+  sentBadge: {
+    position: 'absolute',
+    right: 0,
+    padding: '4px 12px',
+    backgroundColor: '#f59e0b',
+    color: 'white',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '500',
+  },
+
   // Search Section
   searchSection: {
     marginBottom: '25px',
   },
   searchInput: {
     width: '100%',
-    padding: '14px 20px',
+    padding: '12px 20px',
     border: '2px solid #e2e8f0',
     borderRadius: '12px',
     fontSize: '15px',
@@ -346,6 +414,7 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px',
+    marginBottom: '30px',
   },
   personCard: {
     backgroundColor: '#ffffff',
@@ -373,7 +442,7 @@ const styles = {
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: '50%',
+    borderRadius: '40px',
     backgroundColor: '#e2e8f0',
     display: 'flex',
     alignItems: 'center',
@@ -396,7 +465,7 @@ const styles = {
     right: '15px',
     width: '14px',
     height: '14px',
-    borderRadius: '50%',
+    borderRadius: '7px',
     border: '2px solid #ffffff',
   },
   online: {
@@ -414,56 +483,101 @@ const styles = {
   personRole: {
     fontSize: '13px',
     color: '#64748b',
-    margin: 0,
+    margin: '0 0 8px 0',
   },
-  personStats: {
-    display: 'flex',
-    justifyContent: 'space-around',
-    padding: '12px 0',
-    borderTop: '1px solid #e2e8f0',
-    borderBottom: '1px solid #e2e8f0',
-    marginBottom: '15px',
+  friendsBadge: {
+    display: 'inline-block',
+    padding: '4px 12px',
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    borderRadius: '20px',
     fontSize: '12px',
-    color: '#64748b',
+    fontWeight: '500',
   },
   personActions: {
     display: 'flex',
-    justifyContent: 'center',
+    gap: '10px',
+    marginTop: '15px',
   },
-  addFriendButton: {
-    padding: '8px 20px',
+  messageButton: {
+    flex: 1,
+    padding: '8px',
     backgroundColor: '#6366f1',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '13px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
     ':hover': {
       backgroundColor: '#4f46e5',
-      transform: 'scale(1.05)',
     },
   },
-  messageButton: {
-    padding: '8px 20px',
+  addButton: {
+    flex: 1,
+    padding: '8px',
     backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '13px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
     ':hover': {
       backgroundColor: '#059669',
-      transform: 'scale(1.05)',
     },
   },
   pendingBadge: {
-    padding: '8px 20px',
-    backgroundColor: '#e2e8f0',
+    flex: 1,
+    padding: '8px',
+    backgroundColor: '#f1f5f9',
     color: '#64748b',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '13px',
+    textAlign: 'center',
+  },
+
+  // Sent Requests Section
+  sentSection: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    padding: '20px',
+    marginTop: '20px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+    border: '1px solid rgba(0,0,0,0.05)',
+  },
+  sentCard: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '12px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
+    marginBottom: '10px',
+  },
+  sentInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  sentAvatar: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '20px',
+    backgroundColor: '#e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+  },
+  sentName: {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
+  },
+  sentEmail: {
+    fontSize: '12px',
+    color: '#64748b',
+    margin: 0,
   },
 
   // Loading States

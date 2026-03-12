@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import PeopleSection from './PeopleSection';
 import ChatWindow from '../components/ChatWindow';
+import CommunityProfile from '../components/CommunityProfile';
 
 export default function CommunitySection({ 
   feedPosts,
@@ -40,6 +41,8 @@ export default function CommunitySection({
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
 
   // Modern realistic tabs with glass morphism
   const tabs = [
@@ -83,6 +86,7 @@ export default function CommunitySection({
   useEffect(() => {
     if (communityTab === 'chat') {
       fetchConversations();
+      fetchUnreadCount();
     }
   }, [communityTab]);
 
@@ -113,6 +117,16 @@ export default function CommunitySection({
 
   const openChat = (chatUser) => {
     setSelectedChatUser(chatUser);
+    setShowChat(true);
+  };
+
+  const handleViewUserProfile = (userId) => {
+    setSelectedProfileUserId(userId);
+    setShowProfileModal(true);
+  };
+
+  const handleStartChat = (user) => {
+    setSelectedChatUser(user);
     setShowChat(true);
   };
 
@@ -218,7 +232,7 @@ export default function CommunitySection({
             ) : (
               feedPosts.map(post => (
                 <div key={post.id} style={styles.postCard}>
-                  <div style={styles.postHeader} onClick={() => handleViewProfile(post.user_id)}>
+                  <div style={styles.postHeader} onClick={() => handleViewUserProfile(post.user_id)}>
                     <div style={styles.avatar}>
                       {post.user?.avatar_url ? (
                         <img src={post.user.avatar_url} alt="avatar" style={styles.avatarImage} />
@@ -341,7 +355,8 @@ export default function CommunitySection({
         {communityTab === 'people' && (
           <PeopleSection 
             currentUser={user}
-            onStartChat={openChat}
+            onStartChat={handleStartChat}
+            onViewProfile={handleViewUserProfile}
           />
         )}
 
@@ -406,6 +421,19 @@ export default function CommunitySection({
             fetchConversations();
             fetchUnreadCount();
           }}
+        />
+      )}
+
+      {/* Profile Modal */}
+      {showProfileModal && selectedProfileUserId && (
+        <CommunityProfile
+          userId={selectedProfileUserId}
+          currentUser={user}
+          onClose={() => {
+            setShowProfileModal(false);
+            setSelectedProfileUserId(null);
+          }}
+          onStartChat={handleStartChat}
         />
       )}
     </div>
@@ -918,7 +946,7 @@ const styles = {
     right: '2px',
     width: '12px',
     height: '12px',
-    borderRadius: '50%',
+    borderRadius: '6px',
     border: '2px solid #ffffff',
   },
   online: {
