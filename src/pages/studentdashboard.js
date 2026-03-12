@@ -7,6 +7,7 @@ import LearningSection from './LearningSection';
 import MarketplaceSection from './MarketplaceSection';
 import CommunitySection from './CommunitySection';
 import SellerApplicationModal from '../components/SellerApplicationModal';
+import Notifications from '../components/Notifications';
 
 export default function StudentDashboard() {
   const { user, signOut } = useAuth();
@@ -59,6 +60,9 @@ export default function StudentDashboard() {
   // Hover states for buttons
   const [hoveredButton, setHoveredButton] = useState(null);
   const [pressedButton, setPressedButton] = useState(null);
+  
+  // Notifications state
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -403,6 +407,11 @@ export default function StudentDashboard() {
     setPressedButton(null);
   };
 
+  // Notification handlers
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
+
   // Profile Modal (self)
   const renderProfileModal = () => (
     <div style={styles.modalOverlay} onClick={() => setShowProfile(false)}>
@@ -540,18 +549,112 @@ export default function StudentDashboard() {
   if (selectedCourse && courseContent) {
     return (
       <div style={styles.appContainer}>
-        <Navbar 
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-          setShowProfile={setShowProfile}
-          profileData={profileData}
-          hoveredButton={hoveredButton}
-          pressedButton={pressedButton}
-          handleButtonMouseEnter={handleButtonMouseEnter}
-          handleButtonMouseLeave={handleButtonMouseLeave}
-          handleButtonMouseDown={handleButtonMouseDown}
-          handleButtonMouseUp={handleButtonMouseUp}
-        />
+        <nav style={styles.navbar}>
+          <div style={styles.navContainer}>
+            <div style={styles.logoContainer}>
+              <span style={styles.logoText}>Study Mart</span>
+            </div>
+            <div style={styles.navButtons}>
+              <button 
+                style={{
+                  ...styles.navButton,
+                  ...(activeSection === 'home' ? styles.navButtonActive : {}),
+                  ...(hoveredButton === 'nav-home' ? styles.navButtonHover : {}),
+                  ...(pressedButton === 'nav-home' ? styles.navButtonPressed : {})
+                }}
+                onClick={() => setActiveSection('home')}
+                onMouseEnter={() => handleButtonMouseEnter('nav-home')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('nav-home')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                Home
+              </button>
+              <button 
+                style={{
+                  ...styles.navButton,
+                  ...(activeSection === 'learning' ? styles.navButtonActive : {}),
+                  ...(hoveredButton === 'nav-learning' ? styles.navButtonHover : {}),
+                  ...(pressedButton === 'nav-learning' ? styles.navButtonPressed : {})
+                }}
+                onClick={() => setActiveSection('learning')}
+                onMouseEnter={() => handleButtonMouseEnter('nav-learning')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('nav-learning')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                Learning
+              </button>
+              <button 
+                style={{
+                  ...styles.navButton,
+                  ...(activeSection === 'marketplace' ? styles.navButtonActive : {}),
+                  ...(hoveredButton === 'nav-marketplace' ? styles.navButtonHover : {}),
+                  ...(pressedButton === 'nav-marketplace' ? styles.navButtonPressed : {})
+                }}
+                onClick={() => setActiveSection('marketplace')}
+                onMouseEnter={() => handleButtonMouseEnter('nav-marketplace')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('nav-marketplace')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                Marketplace
+              </button>
+              <button 
+                style={{
+                  ...styles.navButton,
+                  ...(activeSection === 'community' ? styles.navButtonActive : {}),
+                  ...(hoveredButton === 'nav-community' ? styles.navButtonHover : {}),
+                  ...(pressedButton === 'nav-community' ? styles.navButtonPressed : {})
+                }}
+                onClick={() => setActiveSection('community')}
+                onMouseEnter={() => handleButtonMouseEnter('nav-community')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('nav-community')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                Community
+              </button>
+            </div>
+            <div style={styles.rightSection}>
+              <button 
+                onClick={toggleNotifications}
+                style={{
+                  ...styles.notificationButton,
+                  ...(hoveredButton === 'notifications' ? styles.notificationButtonHover : {}),
+                  ...(pressedButton === 'notifications' ? styles.notificationButtonPressed : {})
+                }}
+                onMouseEnter={() => handleButtonMouseEnter('notifications')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('notifications')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                🔔
+              </button>
+              <button 
+                onClick={() => setShowProfile(true)} 
+                style={{
+                  ...styles.profileButton,
+                  ...(hoveredButton === 'profile' ? styles.profileButtonHover : {}),
+                  ...(pressedButton === 'profile' ? styles.profileButtonPressed : {})
+                }}
+                onMouseEnter={() => handleButtonMouseEnter('profile')}
+                onMouseLeave={handleButtonMouseLeave}
+                onMouseDown={() => handleButtonMouseDown('profile')}
+                onMouseUp={handleButtonMouseUp}
+              >
+                <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
+                <div style={styles.avatarSmall}>
+                  {profileData.avatar_url ? <img src={profileData.avatar_url} alt="Avatar" style={styles.avatarSmallImage} /> : <span>👤</span>}
+                </div>
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        {showNotifications && (
+          <Notifications onClose={() => setShowNotifications(false)} />
+        )}
 
         <div style={styles.container}>
           <button 
@@ -742,18 +845,112 @@ export default function StudentDashboard() {
   // Main dashboard view
   return (
     <div style={styles.appContainer}>
-      <Navbar 
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        setShowProfile={setShowProfile}
-        profileData={profileData}
-        hoveredButton={hoveredButton}
-        pressedButton={pressedButton}
-        handleButtonMouseEnter={handleButtonMouseEnter}
-        handleButtonMouseLeave={handleButtonMouseLeave}
-        handleButtonMouseDown={handleButtonMouseDown}
-        handleButtonMouseUp={handleButtonMouseUp}
-      />
+      <nav style={styles.navbar}>
+        <div style={styles.navContainer}>
+          <div style={styles.logoContainer}>
+            <span style={styles.logoText}>Study Mart</span>
+          </div>
+          <div style={styles.navButtons}>
+            <button 
+              style={{
+                ...styles.navButton,
+                ...(activeSection === 'home' ? styles.navButtonActive : {}),
+                ...(hoveredButton === 'nav-home' ? styles.navButtonHover : {}),
+                ...(pressedButton === 'nav-home' ? styles.navButtonPressed : {})
+              }}
+              onClick={() => setActiveSection('home')}
+              onMouseEnter={() => handleButtonMouseEnter('nav-home')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('nav-home')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              Home
+            </button>
+            <button 
+              style={{
+                ...styles.navButton,
+                ...(activeSection === 'learning' ? styles.navButtonActive : {}),
+                ...(hoveredButton === 'nav-learning' ? styles.navButtonHover : {}),
+                ...(pressedButton === 'nav-learning' ? styles.navButtonPressed : {})
+              }}
+              onClick={() => setActiveSection('learning')}
+              onMouseEnter={() => handleButtonMouseEnter('nav-learning')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('nav-learning')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              Learning
+            </button>
+            <button 
+              style={{
+                ...styles.navButton,
+                ...(activeSection === 'marketplace' ? styles.navButtonActive : {}),
+                ...(hoveredButton === 'nav-marketplace' ? styles.navButtonHover : {}),
+                ...(pressedButton === 'nav-marketplace' ? styles.navButtonPressed : {})
+              }}
+              onClick={() => setActiveSection('marketplace')}
+              onMouseEnter={() => handleButtonMouseEnter('nav-marketplace')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('nav-marketplace')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              Marketplace
+            </button>
+            <button 
+              style={{
+                ...styles.navButton,
+                ...(activeSection === 'community' ? styles.navButtonActive : {}),
+                ...(hoveredButton === 'nav-community' ? styles.navButtonHover : {}),
+                ...(pressedButton === 'nav-community' ? styles.navButtonPressed : {})
+              }}
+              onClick={() => setActiveSection('community')}
+              onMouseEnter={() => handleButtonMouseEnter('nav-community')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('nav-community')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              Community
+            </button>
+          </div>
+          <div style={styles.rightSection}>
+            <button 
+              onClick={toggleNotifications}
+              style={{
+                ...styles.notificationButton,
+                ...(hoveredButton === 'notifications' ? styles.notificationButtonHover : {}),
+                ...(pressedButton === 'notifications' ? styles.notificationButtonPressed : {})
+              }}
+              onMouseEnter={() => handleButtonMouseEnter('notifications')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('notifications')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              🔔
+            </button>
+            <button 
+              onClick={() => setShowProfile(true)} 
+              style={{
+                ...styles.profileButton,
+                ...(hoveredButton === 'profile' ? styles.profileButtonHover : {}),
+                ...(pressedButton === 'profile' ? styles.profileButtonPressed : {})
+              }}
+              onMouseEnter={() => handleButtonMouseEnter('profile')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('profile')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
+              <div style={styles.avatarSmall}>
+                {profileData.avatar_url ? <img src={profileData.avatar_url} alt="Avatar" style={styles.avatarSmallImage} /> : <span>👤</span>}
+              </div>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {showNotifications && (
+        <Notifications onClose={() => setShowNotifications(false)} />
+      )}
 
       <div style={styles.container}>
         {loading ? (
@@ -857,11 +1054,152 @@ const styles = {
     background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
     fontFamily: "'Inter', 'Segoe UI', sans-serif",
   },
+  
+  // Navbar
+  navbar: {
+    background: 'linear-gradient(90deg, #6366f1 0%, #2563EB 100%)',
+    padding: '0.8rem 0',
+    boxShadow: '0 4px 20px rgba(37, 99, 235, 0.3)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    backdropFilter: 'blur(10px)',
+  },
+  navContainer: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    padding: '0 20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  logoContainer: {
+    background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
+  },
+  logoText: {
+    color: 'white',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    letterSpacing: '0.5px',
+  },
+  navButtons: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap',
+  },
+  navButton: {
+    padding: '10px 20px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '15px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    backdropFilter: 'blur(5px)',
+    letterSpacing: '0.3px',
+  },
+  navButtonHover: {
+    background: 'rgba(255, 255, 255, 0.25)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 20px rgba(255, 107, 53, 0.3)',
+  },
+  navButtonPressed: {
+    transform: 'translateY(2px) scale(0.98)',
+    background: 'rgba(46, 204, 113, 0.4)',
+    boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)',
+  },
+  navButtonActive: {
+    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(255, 107, 53, 0.4)',
+  },
+  rightSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  notificationButton: {
+    background: 'rgba(255,255,255,0.15)',
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    fontSize: '18px',
+    transition: 'all 0.2s ease',
+  },
+  notificationButtonHover: {
+    background: 'rgba(255,255,255,0.25)',
+    transform: 'scale(1.1)',
+  },
+  notificationButtonPressed: {
+    transform: 'scale(0.95)',
+  },
+  profileButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    background: 'rgba(255, 255, 255, 0.15)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '40px',
+    padding: '5px 20px 5px 5px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    backdropFilter: 'blur(5px)',
+  },
+  profileButtonHover: {
+    background: 'rgba(46, 204, 113, 0.3)',
+    borderColor: '#2ECC71',
+    transform: 'scale(1.05)',
+  },
+  profileButtonPressed: {
+    transform: 'scale(0.98)',
+    background: 'rgba(46, 204, 113, 0.5)',
+  },
+  userName: {
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '500',
+    '@media (max-width: 768px)': {
+      display: 'none',
+    },
+  },
+  avatarSmall: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    backgroundColor: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+    overflow: 'hidden',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+  },
+  avatarSmallImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+
+  // Container
   container: {
     maxWidth: '1400px',
     margin: '30px auto',
     padding: '0 20px',
   },
+
+  // Loading
   loadingContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -884,6 +1222,8 @@ const styles = {
     color: '#1E293B',
     fontWeight: '500',
   },
+
+  // Back Button
   backButton: {
     padding: '12px 24px',
     background: 'linear-gradient(135deg, #4B5563 0%, #374151 100%)',
@@ -904,6 +1244,8 @@ const styles = {
   backButtonPressed: {
     transform: 'translateX(-2px) scale(0.98)',
   },
+
+  // Course Header
   courseHeader: {
     marginBottom: '30px',
   },
@@ -926,6 +1268,8 @@ const styles = {
     color: '#64748B',
     flexWrap: 'wrap',
   },
+
+  // Tabs
   tabContainer: {
     display: 'flex',
     gap: '15px',
@@ -958,9 +1302,13 @@ const styles = {
     borderBottom: '3px solid #FF6B35',
     fontWeight: '600',
   },
+
+  // Content Area
   contentArea: {
     minHeight: '400px',
   },
+
+  // Video Grid
   videoGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
@@ -1002,6 +1350,8 @@ const styles = {
     fontSize: '13px',
     color: '#64748B',
   },
+
+  // PDF Grid
   pdfGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
@@ -1035,6 +1385,8 @@ const styles = {
     fontSize: '13px',
     color: '#64748B',
   },
+
+  // Q&A Item
   qaItem: {
     marginBottom: '20px',
     padding: '20px',
@@ -1054,6 +1406,8 @@ const styles = {
     color: '#4B5563',
     lineHeight: '1.6',
   },
+
+  // Modal Styles
   modalOverlay: {
     position: 'fixed',
     top: 0,
@@ -1164,6 +1518,8 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
   },
+
+  // Profile Modal
   profileModal: {
     backgroundColor: 'white',
     borderRadius: '16px',
