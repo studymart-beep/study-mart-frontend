@@ -13,7 +13,6 @@ export default function SellerDashboard() {
   });
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
 
   const fetchProducts = async () => {
     try {
@@ -177,7 +176,7 @@ export default function SellerDashboard() {
             <div key={product.id} style={styles.productCard}>
               {product.images && product.images.length > 0 && (
                 <img
-                  src={`http://localhost:5000${product.images[0].image_url}`}
+                  src={`https://study-mart-backend.onrender.com${product.images[0].image_url}`}
                   alt={product.name}
                   style={styles.productImage}
                 />
@@ -188,7 +187,6 @@ export default function SellerDashboard() {
                 <p style={styles.productStock}>Stock: {product.stock_quantity || 0}</p>
                 <p style={styles.productStatus}>Status: {product.status}</p>
                 <div style={styles.productActions}>
-                  <button style={styles.editButton}>Edit</button>
                   <button style={styles.deleteButton} onClick={() => handleDelete(product.id)}>
                     Delete
                   </button>
@@ -312,15 +310,6 @@ const styles = {
   productActions: {
     display: 'flex',
     gap: '10px',
-  },
-  editButton: {
-    padding: '5px 10px',
-    backgroundColor: '#f59e0b',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
   },
   deleteButton: {
     padding: '5px 10px',

@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Use environment variable with fallback
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Production backend URL - NO LOCALHOST
+const API_URL = process.env.REACT_APP_API_URL || 'https://study-mart-backend.onrender.com/api';
+
+console.log('🚀 API URL:', API_URL);
 
 const api = axios.create({
   baseURL: API_URL,

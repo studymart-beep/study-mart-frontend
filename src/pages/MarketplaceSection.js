@@ -180,17 +180,18 @@ const styles = {
   },
   becomeSellerButton: {
     padding: '10px 20px',
-    backgroundColor: '#10b981',
+    background: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '12px',
     cursor: 'pointer',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
+    boxShadow: '0 8px 20px rgba(46,204,113,0.3)',
   },
   becomeSellerButtonHover: {
     transform: 'scale(1.05)',
-    boxShadow: '0 8px 20px rgba(255,107,53,0.3)',
+    boxShadow: '0 12px 30px rgba(255,107,53,0.4)',
   },
   becomeSellerButtonPressed: {
     transform: 'scale(0.98)',
@@ -281,7 +282,7 @@ const styles = {
   buyButton: {
     width: '100%',
     padding: '10px',
-    backgroundColor: '#6366f1',
+    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
@@ -289,8 +290,8 @@ const styles = {
     fontSize: '14px',
   },
   buyButtonHover: {
-    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
     transform: 'scale(1.02)',
+    boxShadow: '0 8px 20px rgba(255,107,53,0.3)',
   },
   buyButtonPressed: {
     transform: 'scale(0.98)',

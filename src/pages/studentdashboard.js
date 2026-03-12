@@ -679,7 +679,16 @@ export default function StudentDashboard() {
                 <button onClick={closeVideo} style={styles.closeButton}>×</button>
               </div>
               <div style={styles.videoContainer}>
-                <video controls autoPlay style={styles.modalVideo} src={`http://localhost:5000${selectedVideo.file_path}`} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML += '<p style="color: white; text-align: center;">Video failed to load</p>'; }} />
+                <video 
+                  controls 
+                  autoPlay 
+                  style={styles.modalVideo} 
+                  src={`https://study-mart-backend.onrender.com${selectedVideo.file_path}`} 
+                  onError={(e) => { 
+                    e.target.style.display = 'none'; 
+                    e.target.parentElement.innerHTML += '<p style="color: white; text-align: center;">Video failed to load</p>'; 
+                  }} 
+                />
               </div>
             </div>
           </div>
@@ -695,14 +704,19 @@ export default function StudentDashboard() {
               </div>
               <div style={styles.pdfContainer}>
                 {!pdfError ? (
-                  <iframe src={`http://localhost:5000${selectedPdf.file_path}#toolbar=1&navpanes=1`} style={styles.pdfViewer} title={selectedPdf.title} onError={() => setPdfError(true)} />
+                  <iframe 
+                    src={`https://study-mart-backend.onrender.com${selectedPdf.file_path}#toolbar=1&navpanes=1`} 
+                    style={styles.pdfViewer} 
+                    title={selectedPdf.title} 
+                    onError={() => setPdfError(true)} 
+                  />
                 ) : (
                   <div style={styles.pdfErrorContainer}>
                     <p style={styles.pdfErrorIcon}>📄</p>
                     <h3 style={styles.pdfErrorTitle}>Unable to display PDF</h3>
                     <p style={styles.pdfErrorMessage}>Click the button below to download</p>
                     <a 
-                      href={`http://localhost:5000${selectedPdf.file_path}`} 
+                      href={`https://study-mart-backend.onrender.com${selectedPdf.file_path}`} 
                       download={selectedPdf.title} 
                       style={styles.pdfDownloadButton}
                       onMouseEnter={() => handleButtonMouseEnter('pdf-download')}
