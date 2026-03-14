@@ -4,6 +4,7 @@ import api from '../services/api';
 import PeopleSection from './PeopleSection';
 import ChatWindow from '../components/ChatWindow';
 import CommunityProfile from '../components/CommunityProfile';
+import { uploadMedia, subscribeToPosts, subscribeToLikes, subscribeToComments, toggleLike, addComment } from '../services/postService';
 
 export default function CommunitySection({ 
   feedPosts,
@@ -43,6 +44,18 @@ export default function CommunitySection({
   const [unreadCount, setUnreadCount] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
+  
+  // New state for enhanced media posts
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [mediaType, setMediaType] = useState('text');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [postComments, setPostComments] = useState({});
+  const [localPosts, setLocalPosts] = useState([]);
+  const [realTimeEnabled, setRealTimeEnabled] = useState(false);
 
   // Modern realistic tabs with glass morphism
   const tabs = [
@@ -90,6 +103,76 @@ export default function CommunitySection({
     }
   }, [communityTab]);
 
+  useEffect(() => {
+    // Combine external feedPosts with localPosts for real-time updates
+    if (feedPosts && feedPosts.length > 0) {
+      setLocalPosts(feedPosts);
+    }
+  }, [feedPosts]);
+
+  useEffect(() => {
+    // Setup real-time subscriptions
+    if (!realTimeEnabled && user) {
+      setupRealTimeSubscriptions();
+      setRealTimeEnabled(true);
+    }
+  }, [user]);
+
+  const setupRealTimeSubscriptions = () => {
+    // Subscribe to new posts
+    const postSubscription = subscribeToPosts((newPost) => {
+      if (newPost) {
+        setLocalPosts(prev => [newPost, ...prev]);
+      }
+    });
+
+    // Subscribe to likes for each post
+    const likeSubscriptions = localPosts.map(post => 
+      subscribeToLikes(post.id, (likeData) => {
+        if (likeData) {
+          setLocalPosts(prev => 
+            prev.map(p => 
+              p.id === likeData.postId 
+                ? { ...p, likes: likeData.count }
+                : p
+            )
+          );
+        }
+      })
+    );
+
+    // Subscribe to comments for each post
+    const commentSubscriptions = localPosts.map(post =>
+      subscribeToComments(post.id, (newComment) => {
+        if (newComment) {
+          // Update comments count
+          setLocalPosts(prev => 
+            prev.map(p => 
+              p.id === newComment.post_id 
+                ? { ...p, comments: (p.comments || 0) + 1 }
+                : p
+            )
+          );
+          
+          // Add to comments list if post is selected
+          if (selectedPost?.id === newComment.post_id) {
+            setPostComments(prev => ({
+              ...prev,
+              [newComment.post_id]: [...(prev[newComment.post_id] || []), newComment]
+            }));
+          }
+        }
+      })
+    );
+
+    // Cleanup function
+    return () => {
+      postSubscription.unsubscribe();
+      likeSubscriptions.forEach(sub => sub.unsubscribe());
+      commentSubscriptions.forEach(sub => sub.unsubscribe());
+    };
+  };
+
   const fetchConversations = async () => {
     setLoadingConversations(true);
     try {
@@ -129,6 +212,117 @@ export default function CommunitySection({
     setSelectedChatUser(user);
     setShowChat(true);
   };
+
+  // Handle media selection
+  const handleMediaSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setMediaFile(file);
+    setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMediaPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Enhanced create post with media
+  const handleCreatePostWithMedia = async () => {
+    if (!newPostContent.trim() && !mediaFile) return;
+    
+    if (posting) return;
+    
+    if (handleCreatePost) {
+      // If media exists, upload first
+      if (mediaFile) {
+        setUploadProgress(10);
+        const uploadResult = await uploadMedia(mediaFile, mediaType);
+        setUploadProgress(100);
+        
+        if (uploadResult.success) {
+          // Call the parent's handleCreatePost with media info
+          await handleCreatePost({
+            content: newPostContent,
+            media_url: uploadResult.url,
+            media_type: mediaType
+          });
+        }
+      } else {
+        // Text only post
+        await handleCreatePost({ content: newPostContent });
+      }
+      
+      // Clear form
+      setNewPostContent('');
+      setMediaFile(null);
+      setMediaPreview(null);
+      setMediaType('text');
+      setUploadProgress(0);
+    }
+  };
+
+  // Handle like with real-time update
+  const handleLikeWithRealTime = async (postId) => {
+    const result = await toggleLike(postId);
+    if (result.success) {
+      // Optimistic update
+      setLocalPosts(prev => 
+        prev.map(p => 
+          p.id === postId 
+            ? { 
+                ...p, 
+                liked: !p.liked,
+                likes: p.liked ? (p.likes - 1) : (p.likes + 1)
+              }
+            : p
+        )
+      );
+    }
+  };
+
+  // Show comments for a post
+  const handleShowComments = async (post) => {
+    setSelectedPost(post);
+    setShowComments(true);
+    await fetchComments(post.id);
+  };
+
+  // Fetch comments for a post
+  const fetchComments = async (postId) => {
+    try {
+      const response = await api.get(`/posts/${postId}/comments`);
+      if (response.data.success) {
+        setPostComments(prev => ({
+          ...prev,
+          [postId]: response.data.comments
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+
+  // Add comment with real-time
+  const handleAddComment = async (postId) => {
+    if (!commentText.trim()) return;
+    
+    const result = await addComment(postId, commentText);
+    if (result.success) {
+      setCommentText('');
+      // Comments will be added via real-time subscription
+    }
+  };
+
+  if (loadingFeed && localPosts.length === 0) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.loader}></div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -187,30 +381,58 @@ export default function CommunitySection({
                 style={styles.postInput}
                 rows="2"
               />
+              
+              {/* Media Preview */}
+              {mediaPreview && (
+                <div style={styles.mediaPreview}>
+                  {mediaType === 'image' ? (
+                    <img src={mediaPreview} alt="Preview" style={styles.previewImage} />
+                  ) : (
+                    <video src={mediaPreview} controls style={styles.previewVideo} />
+                  )}
+                  <button 
+                    onClick={() => {
+                      setMediaFile(null);
+                      setMediaPreview(null);
+                      setMediaType('text');
+                    }}
+                    style={styles.removeMedia}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div style={styles.progressBar}>
+                  <div style={{...styles.progressFill, width: `${uploadProgress}%`}} />
+                </div>
+              )}
+
+              {/* Media Upload Buttons */}
               <div style={styles.postActions}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setNewPostImage(e.target.files[0])}
-                  id="post-image"
-                  style={{ display: 'none' }}
-                />
+                <div style={styles.mediaButtons}>
+                  <label style={styles.iconButton}>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={handleMediaSelect}
+                      style={{ display: 'none' }}
+                    />
+                    📷
+                  </label>
+                  {newPostImage && (
+                    <span style={styles.fileName}>{newPostImage.name}</span>
+                  )}
+                </div>
+                
                 <button
-                  onClick={() => document.getElementById('post-image').click()}
-                  style={styles.iconButton}
-                  title="Add Image"
-                >
-                  📷
-                </button>
-                {newPostImage && (
-                  <span style={styles.fileName}>{newPostImage.name}</span>
-                )}
-                <button
-                  onClick={handleCreatePost}
-                  disabled={posting || !newPostContent.trim()}
+                  onClick={handleCreatePostWithMedia}
+                  disabled={posting || (!newPostContent.trim() && !mediaFile)}
                   style={{
                     ...styles.postButton,
-                    ...(posting || !newPostContent.trim() ? styles.disabled : {})
+                    ...(posting || (!newPostContent.trim() && !mediaFile) ? styles.disabled : {})
                   }}
                 >
                   {posting ? 'Posting...' : 'Post'}
@@ -219,18 +441,14 @@ export default function CommunitySection({
             </div>
 
             {/* Feed Posts */}
-            {loadingFeed ? (
-              <div style={styles.loadingContainer}>
-                <div style={styles.loader}></div>
-              </div>
-            ) : feedError ? (
+            {feedError ? (
               <div style={styles.errorMessage}>{feedError}</div>
-            ) : feedPosts.length === 0 ? (
+            ) : localPosts.length === 0 ? (
               <div style={styles.emptyState}>
                 <p>No posts yet. Be the first to post!</p>
               </div>
             ) : (
-              feedPosts.map(post => (
+              localPosts.map(post => (
                 <div key={post.id} style={styles.postCard}>
                   <div style={styles.postHeader} onClick={() => handleViewUserProfile(post.user_id)}>
                     <div style={styles.avatar}>
@@ -253,24 +471,93 @@ export default function CommunitySection({
                   
                   <p style={styles.postContent}>{post.content}</p>
                   
+                  {/* Post Media */}
                   {post.image_url && (
-                    <img src={post.image_url} alt="post" style={styles.postImage} />
+                    <img 
+                      src={post.image_url} 
+                      alt="post" 
+                      style={styles.postImage}
+                      onClick={() => window.open(post.image_url, '_blank')}
+                    />
                   )}
                   
+                  {post.video_url && (
+                    <video 
+                      src={post.video_url} 
+                      controls 
+                      style={styles.postVideo}
+                    />
+                  )}
+                  
+                  {/* Post Stats */}
+                  <div style={styles.postStats}>
+                    <span>❤️ {post.likes || 0} likes</span>
+                    <span>💬 {post.comments || 0} comments</span>
+                  </div>
+                  
+                  {/* Post Actions */}
                   <div style={styles.postFooter}>
                     <button
-                      onClick={() => handleLikePost(post.id)}
+                      onClick={() => handleLikeWithRealTime(post.id)}
                       style={{
                         ...styles.likeButton,
                         ...(post.liked ? styles.liked : {})
                       }}
                     >
-                      ❤️ {post.likes || 0}
+                      ❤️ {post.liked ? 'Liked' : 'Like'}
                     </button>
-                    <span style={styles.commentCount}>
-                      💬 {post.comments || 0}
-                    </span>
+                    <button
+                      onClick={() => handleShowComments(post)}
+                      style={styles.commentButton}
+                    >
+                      💬 Comment
+                    </button>
                   </div>
+                  
+                  {/* Comments Section */}
+                  {selectedPost?.id === post.id && showComments && (
+                    <div style={styles.commentsSection}>
+                      {/* Comments list */}
+                      {postComments[post.id]?.map(comment => (
+                        <div key={comment.id} style={styles.comment}>
+                          <img 
+                            src={comment.user?.avatar_url || '/default-avatar.png'} 
+                            alt={comment.user?.full_name}
+                            style={styles.commentAvatar}
+                          />
+                          <div style={styles.commentContent}>
+                            <strong>{comment.user?.full_name}</strong>
+                            <p>{comment.content}</p>
+                            <span style={styles.commentTime}>
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Add comment input */}
+                      <div style={styles.addComment}>
+                        <input
+                          type="text"
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Write a comment..."
+                          style={styles.commentInput}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleAddComment(post.id);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleAddComment(post.id)}
+                          style={styles.commentSubmit}
+                        >
+                          Post
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -596,10 +883,65 @@ const styles = {
       boxShadow: '0 0 0 3px rgba(102,126,234,0.1)',
     },
   },
+  mediaPreview: {
+    position: 'relative',
+    marginBottom: '15px',
+    borderRadius: '12px',
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    maxHeight: '300px',
+    objectFit: 'contain',
+    backgroundColor: '#f1f5f9',
+  },
+  previewVideo: {
+    width: '100%',
+    maxHeight: '300px',
+    backgroundColor: '#000',
+  },
+  removeMedia: {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    width: '30px',
+    height: '30px',
+    borderRadius: '15px',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ':hover': {
+      backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+  },
+  progressBar: {
+    width: '100%',
+    height: '4px',
+    backgroundColor: '#e2e8f0',
+    borderRadius: '2px',
+    marginBottom: '15px',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#667eea',
+    transition: 'width 0.3s ease',
+  },
   postActions: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: '12px',
+  },
+  mediaButtons: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
   },
   iconButton: {
     padding: '10px 15px',
@@ -617,7 +959,10 @@ const styles = {
   fileName: {
     fontSize: '13px',
     color: '#64748b',
-    flex: 1,
+    maxWidth: '200px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   postButton: {
     padding: '10px 28px',
@@ -714,40 +1059,124 @@ const styles = {
     borderRadius: '12px',
     marginBottom: '15px',
     boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
+    cursor: 'pointer',
+  },
+  postVideo: {
+    width: '100%',
+    maxHeight: '450px',
+    borderRadius: '12px',
+    marginBottom: '15px',
+    backgroundColor: '#000',
+  },
+  postStats: {
+    display: 'flex',
+    gap: '20px',
+    padding: '10px 0',
+    borderTop: '1px solid #e2e8f0',
+    borderBottom: '1px solid #e2e8f0',
+    marginBottom: '10px',
+    fontSize: '14px',
+    color: '#64748b',
   },
   postFooter: {
     display: 'flex',
     alignItems: 'center',
-    gap: '20px',
-    paddingTop: '15px',
-    borderTop: '1px solid #e2e8f0',
+    gap: '10px',
   },
   likeButton: {
+    flex: 1,
     padding: '8px 16px',
     backgroundColor: '#f1f5f9',
     border: 'none',
-    borderRadius: '25px',
+    borderRadius: '8px',
     fontSize: '14px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '6px',
     transition: 'all 0.2s ease',
     ':hover': {
       backgroundColor: '#e2e8f0',
-      transform: 'scale(1.05)',
     },
   },
   liked: {
     backgroundColor: '#fee2e2',
     color: '#ef4444',
   },
-  commentCount: {
+  commentButton: {
+    flex: 1,
+    padding: '8px 16px',
+    backgroundColor: '#f1f5f9',
+    border: 'none',
+    borderRadius: '8px',
     fontSize: '14px',
-    color: '#64748b',
+    cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
+    justifyContent: 'center',
+    gap: '6px',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      backgroundColor: '#e2e8f0',
+    },
+  },
+  commentsSection: {
+    marginTop: '15px',
+    paddingTop: '15px',
+    borderTop: '1px solid #e2e8f0',
+  },
+  comment: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '12px',
+  },
+  commentAvatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '16px',
+    objectFit: 'cover',
+  },
+  commentContent: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+    padding: '8px 12px',
+    borderRadius: '12px',
+    fontSize: '14px',
+  },
+  commentTime: {
+    fontSize: '11px',
+    color: '#94a3b8',
+    display: 'block',
+    marginTop: '4px',
+  },
+  addComment: {
+    display: 'flex',
+    gap: '10px',
+    marginTop: '15px',
+  },
+  commentInput: {
+    flex: 1,
+    padding: '8px 12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '20px',
+    fontSize: '14px',
+    ':focus': {
+      outline: 'none',
+      borderColor: '#6366f1',
+    },
+  },
+  commentSubmit: {
+    padding: '8px 16px',
+    backgroundColor: '#6366f1',
+    color: 'white',
+    border: 'none',
+    borderRadius: '20px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    ':hover': {
+      backgroundColor: '#4f46e5',
+    },
   },
 
   // Channel Styles
@@ -1001,6 +1430,17 @@ const globalStyles = `
   @keyframes float {
     0%, 100% { transform: translate(0, 0); }
     50% { transform: translate(20px, -20px); }
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 `;
 
