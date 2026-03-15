@@ -45,7 +45,6 @@ export default function CommunitySection({
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   
-  // New state for enhanced media posts
   const [mediaFile, setMediaFile] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
   const [mediaType, setMediaType] = useState('text');
@@ -57,7 +56,6 @@ export default function CommunitySection({
   const [localPosts, setLocalPosts] = useState([]);
   const [realTimeEnabled, setRealTimeEnabled] = useState(false);
 
-  // Modern realistic tabs with glass morphism
   const tabs = [
     { 
       id: 'home', 
@@ -104,14 +102,12 @@ export default function CommunitySection({
   }, [communityTab]);
 
   useEffect(() => {
-    // Combine external feedPosts with localPosts for real-time updates
     if (feedPosts && feedPosts.length > 0) {
       setLocalPosts(feedPosts);
     }
   }, [feedPosts]);
 
   useEffect(() => {
-    // Setup real-time subscriptions
     if (!realTimeEnabled && user) {
       setupRealTimeSubscriptions();
       setRealTimeEnabled(true);
@@ -119,14 +115,12 @@ export default function CommunitySection({
   }, [user]);
 
   const setupRealTimeSubscriptions = () => {
-    // Subscribe to new posts
     const postSubscription = subscribeToPosts((newPost) => {
       if (newPost) {
         setLocalPosts(prev => [newPost, ...prev]);
       }
     });
 
-    // Subscribe to likes for each post
     const likeSubscriptions = localPosts.map(post => 
       subscribeToLikes(post.id, (likeData) => {
         if (likeData) {
@@ -141,11 +135,9 @@ export default function CommunitySection({
       })
     );
 
-    // Subscribe to comments for each post
     const commentSubscriptions = localPosts.map(post =>
       subscribeToComments(post.id, (newComment) => {
         if (newComment) {
-          // Update comments count
           setLocalPosts(prev => 
             prev.map(p => 
               p.id === newComment.post_id 
@@ -154,7 +146,6 @@ export default function CommunitySection({
             )
           );
           
-          // Add to comments list if post is selected
           if (selectedPost?.id === newComment.post_id) {
             setPostComments(prev => ({
               ...prev,
@@ -165,7 +156,6 @@ export default function CommunitySection({
       })
     );
 
-    // Cleanup function
     return () => {
       postSubscription.unsubscribe();
       likeSubscriptions.forEach(sub => sub.unsubscribe());
@@ -213,7 +203,6 @@ export default function CommunitySection({
     setShowChat(true);
   };
 
-  // Handle media selection
   const handleMediaSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -221,7 +210,6 @@ export default function CommunitySection({
     setMediaFile(file);
     setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
     
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setMediaPreview(reader.result);
@@ -229,46 +217,49 @@ export default function CommunitySection({
     reader.readAsDataURL(file);
   };
 
-  // Enhanced create post with media
   const handleCreatePostWithMedia = async () => {
     if (!newPostContent.trim() && !mediaFile) return;
-    
     if (posting) return;
     
-    if (handleCreatePost) {
-      // If media exists, upload first
+    setPosting(true);
+    
+    try {
+      let mediaUrl = null;
+      let finalMediaType = 'text';
+      
       if (mediaFile) {
         setUploadProgress(10);
         const uploadResult = await uploadMedia(mediaFile, mediaType);
         setUploadProgress(100);
         
         if (uploadResult.success) {
-          // Call the parent's handleCreatePost with media info
-          await handleCreatePost({
-            content: newPostContent,
-            media_url: uploadResult.url,
-            media_type: mediaType
-          });
+          mediaUrl = uploadResult.url;
+          finalMediaType = mediaType;
         }
-      } else {
-        // Text only post
-        await handleCreatePost({ content: newPostContent });
       }
       
-      // Clear form
+      await handleCreatePost({
+        content: newPostContent,
+        media_url: mediaUrl,
+        media_type: finalMediaType
+      });
+      
       setNewPostContent('');
       setMediaFile(null);
       setMediaPreview(null);
       setMediaType('text');
       setUploadProgress(0);
+      
+    } catch (error) {
+      console.error('Error creating post:', error);
+    } finally {
+      setPosting(false);
     }
   };
 
-  // Handle like with real-time update
   const handleLikeWithRealTime = async (postId) => {
     const result = await toggleLike(postId);
     if (result.success) {
-      // Optimistic update
       setLocalPosts(prev => 
         prev.map(p => 
           p.id === postId 
@@ -283,14 +274,12 @@ export default function CommunitySection({
     }
   };
 
-  // Show comments for a post
   const handleShowComments = async (post) => {
     setSelectedPost(post);
     setShowComments(true);
     await fetchComments(post.id);
   };
 
-  // Fetch comments for a post
   const fetchComments = async (postId) => {
     try {
       const response = await api.get(`/posts/${postId}/comments`);
@@ -305,35 +294,23 @@ export default function CommunitySection({
     }
   };
 
-  // Add comment with real-time
   const handleAddComment = async (postId) => {
     if (!commentText.trim()) return;
     
     const result = await addComment(postId, commentText);
     if (result.success) {
       setCommentText('');
-      // Comments will be added via real-time subscription
     }
   };
 
-  if (loadingFeed && localPosts.length === 0) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loader}></div>
-      </div>
-    );
-  }
-
   return (
     <div style={styles.container}>
-      {/* Welcome Header - Premium Gradient */}
       <div style={styles.welcomeHeader}>
         <h1 style={styles.welcomeTitle}>Welcome to Study Mart Community</h1>
         <p style={styles.welcomeSubtitle}>Connect, Learn, Grow Together</p>
         <div style={styles.headerGlow}></div>
       </div>
 
-      {/* Premium Glass-Morphism Tab Bar */}
       <div style={styles.tabBar}>
         {tabs.map(tab => (
           <button
@@ -363,16 +340,13 @@ export default function CommunitySection({
         ))}
       </div>
 
-      {/* Tab Content */}
       <div style={styles.content}>
-        {/* HOME TAB - Feed */}
         {communityTab === 'home' && (
           <div style={styles.feedContainer}>
             <div style={styles.feedHeader}>
               <h2 style={styles.sectionTitle}>🏠 Home Feed</h2>
             </div>
 
-            {/* Create Post Card */}
             <div style={styles.createPostCard}>
               <textarea
                 placeholder="What's on your mind?"
@@ -382,7 +356,6 @@ export default function CommunitySection({
                 rows="2"
               />
               
-              {/* Media Preview */}
               {mediaPreview && (
                 <div style={styles.mediaPreview}>
                   {mediaType === 'image' ? (
@@ -403,14 +376,12 @@ export default function CommunitySection({
                 </div>
               )}
 
-              {/* Upload Progress */}
               {uploadProgress > 0 && uploadProgress < 100 && (
                 <div style={styles.progressBar}>
                   <div style={{...styles.progressFill, width: `${uploadProgress}%`}} />
                 </div>
               )}
 
-              {/* Media Upload Buttons */}
               <div style={styles.postActions}>
                 <div style={styles.mediaButtons}>
                   <label style={styles.iconButton}>
@@ -440,7 +411,6 @@ export default function CommunitySection({
               </div>
             </div>
 
-            {/* Feed Posts */}
             {feedError ? (
               <div style={styles.errorMessage}>{feedError}</div>
             ) : localPosts.length === 0 ? (
@@ -471,7 +441,6 @@ export default function CommunitySection({
                   
                   <p style={styles.postContent}>{post.content}</p>
                   
-                  {/* Post Media */}
                   {post.image_url && (
                     <img 
                       src={post.image_url} 
@@ -489,13 +458,11 @@ export default function CommunitySection({
                     />
                   )}
                   
-                  {/* Post Stats */}
                   <div style={styles.postStats}>
                     <span>❤️ {post.likes || 0} likes</span>
                     <span>💬 {post.comments || 0} comments</span>
                   </div>
                   
-                  {/* Post Actions */}
                   <div style={styles.postFooter}>
                     <button
                       onClick={() => handleLikeWithRealTime(post.id)}
@@ -514,10 +481,8 @@ export default function CommunitySection({
                     </button>
                   </div>
                   
-                  {/* Comments Section */}
                   {selectedPost?.id === post.id && showComments && (
                     <div style={styles.commentsSection}>
-                      {/* Comments list */}
                       {postComments[post.id]?.map(comment => (
                         <div key={comment.id} style={styles.comment}>
                           <img 
@@ -535,7 +500,6 @@ export default function CommunitySection({
                         </div>
                       ))}
                       
-                      {/* Add comment input */}
                       <div style={styles.addComment}>
                         <input
                           type="text"
@@ -564,7 +528,6 @@ export default function CommunitySection({
           </div>
         )}
 
-        {/* CHANNEL TAB */}
         {communityTab === 'channel' && (
           <div style={styles.channelContainer}>
             <div style={styles.channelHeader}>
@@ -620,7 +583,6 @@ export default function CommunitySection({
           </div>
         )}
 
-        {/* REELS TAB */}
         {communityTab === 'reels' && (
           <div style={styles.reelsContainer}>
             <h2 style={styles.sectionTitle}>🎬 Reels</h2>
@@ -638,7 +600,6 @@ export default function CommunitySection({
           </div>
         )}
 
-        {/* PEOPLE TAB */}
         {communityTab === 'people' && (
           <PeopleSection 
             currentUser={user}
@@ -647,7 +608,6 @@ export default function CommunitySection({
           />
         )}
 
-        {/* CHAT TAB */}
         {communityTab === 'chat' && (
           <div style={styles.chatContainer}>
             <h2 style={styles.sectionTitle}>💬 Messages</h2>
@@ -697,7 +657,6 @@ export default function CommunitySection({
         )}
       </div>
 
-      {/* Chat Window */}
       {showChat && selectedChatUser && (
         <ChatWindow
           user={selectedChatUser}
@@ -711,7 +670,6 @@ export default function CommunitySection({
         />
       )}
 
-      {/* Profile Modal */}
       {showProfileModal && selectedProfileUserId && (
         <CommunityProfile
           userId={selectedProfileUserId}
@@ -737,8 +695,6 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
   },
-
-  // Premium Welcome Header
   welcomeHeader: {
     position: 'relative',
     textAlign: 'center',
@@ -763,20 +719,12 @@ const styles = {
     fontWeight: '800',
     marginBottom: '15px',
     textShadow: '0 4px 12px rgba(0,0,0,0.2)',
-    '@media (max-width: 768px)': {
-      fontSize: '32px',
-    },
   },
   welcomeSubtitle: {
     fontSize: '20px',
     opacity: 0.95,
     textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    '@media (max-width: 768px)': {
-      fontSize: '16px',
-    },
   },
-
-  // Premium Glass Tab Bar
   tabBar: {
     display: 'flex',
     justifyContent: 'space-around',
@@ -821,9 +769,6 @@ const styles = {
     fontSize: '32px',
     filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
     transition: 'all 0.3s ease',
-    '@media (max-width: 480px)': {
-      fontSize: '26px',
-    },
   },
   unreadBadge: {
     position: 'absolute',
@@ -838,8 +783,6 @@ const styles = {
     minWidth: '18px',
     textAlign: 'center',
   },
-
-  // Content Area
   content: {
     padding: '30px 20px',
     backgroundColor: '#ffffff',
@@ -852,8 +795,6 @@ const styles = {
     WebkitTextFillColor: 'transparent',
     marginBottom: '25px',
   },
-
-  // Feed Styles
   feedContainer: {
     width: '100%',
   },
@@ -877,11 +818,6 @@ const styles = {
     resize: 'vertical',
     marginBottom: '15px',
     transition: 'all 0.2s ease',
-    ':focus': {
-      outline: 'none',
-      borderColor: '#667eea',
-      boxShadow: '0 0 0 3px rgba(102,126,234,0.1)',
-    },
   },
   mediaPreview: {
     position: 'relative',
@@ -915,9 +851,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    ':hover': {
-      backgroundColor: 'rgba(0,0,0,0.7)',
-    },
   },
   progressBar: {
     width: '100%',
@@ -951,10 +884,6 @@ const styles = {
     fontSize: '18px',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    ':hover': {
-      backgroundColor: '#e2e8f0',
-      transform: 'scale(1.05)',
-    },
   },
   fileName: {
     fontSize: '13px',
@@ -975,18 +904,10 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     boxShadow: '0 4px 10px rgba(102,126,234,0.3)',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 20px rgba(102,126,234,0.4)',
-    },
   },
   disabled: {
     opacity: 0.5,
     cursor: 'not-allowed',
-    ':hover': {
-      transform: 'none',
-      boxShadow: '0 4px 10px rgba(102,126,234,0.3)',
-    },
   },
   postCard: {
     backgroundColor: '#ffffff',
@@ -996,10 +917,6 @@ const styles = {
     boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
     border: '1px solid rgba(0,0,0,0.05)',
     transition: 'all 0.3s ease',
-    ':hover': {
-      transform: 'translateY(-3px)',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    },
   },
   postHeader: {
     display: 'flex',
@@ -1096,9 +1013,6 @@ const styles = {
     justifyContent: 'center',
     gap: '6px',
     transition: 'all 0.2s ease',
-    ':hover': {
-      backgroundColor: '#e2e8f0',
-    },
   },
   liked: {
     backgroundColor: '#fee2e2',
@@ -1117,9 +1031,6 @@ const styles = {
     justifyContent: 'center',
     gap: '6px',
     transition: 'all 0.2s ease',
-    ':hover': {
-      backgroundColor: '#e2e8f0',
-    },
   },
   commentsSection: {
     marginTop: '15px',
@@ -1161,10 +1072,6 @@ const styles = {
     border: '1px solid #e2e8f0',
     borderRadius: '20px',
     fontSize: '14px',
-    ':focus': {
-      outline: 'none',
-      borderColor: '#6366f1',
-    },
   },
   commentSubmit: {
     padding: '8px 16px',
@@ -1174,12 +1081,7 @@ const styles = {
     borderRadius: '20px',
     fontSize: '14px',
     cursor: 'pointer',
-    ':hover': {
-      backgroundColor: '#4f46e5',
-    },
   },
-
-  // Channel Styles
   channelContainer: {
     width: '100%',
   },
@@ -1200,10 +1102,6 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     boxShadow: '0 4px 10px rgba(16,185,129,0.3)',
-    ':hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 20px rgba(16,185,129,0.4)',
-    },
   },
   channelGrid: {
     display: 'grid',
@@ -1219,10 +1117,6 @@ const styles = {
     boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
     border: '1px solid rgba(0,0,0,0.05)',
     transition: 'all 0.3s ease',
-    ':hover': {
-      transform: 'translateY(-3px)',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    },
   },
   channelIcon: {
     width: '60px',
@@ -1270,8 +1164,6 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
   },
-
-  // Reels Styles
   reelsContainer: {
     width: '100%',
   },
@@ -1286,10 +1178,6 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
     transition: 'all 0.3s ease',
-    ':hover': {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    },
   },
   reelThumbnail: {
     height: '220px',
@@ -1314,8 +1202,6 @@ const styles = {
     color: '#64748b',
     margin: 0,
   },
-
-  // Chat Tab Styles
   chatContainer: {
     width: '100%',
   },
@@ -1331,10 +1217,6 @@ const styles = {
     boxShadow: '0 5px 15px rgba(0,0,0,0.03)',
     border: '1px solid rgba(0,0,0,0.03)',
     transition: 'all 0.2s ease',
-    ':hover': {
-      backgroundColor: '#f8fafc',
-      transform: 'translateX(5px)',
-    },
   },
   conversationAvatar: {
     position: 'relative',
@@ -1384,8 +1266,6 @@ const styles = {
   offline: {
     backgroundColor: '#94a3b8',
   },
-
-  // Loading States
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
@@ -1420,18 +1300,15 @@ const styles = {
   },
 };
 
-// Global animations
 const globalStyles = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  
   @keyframes float {
     0%, 100% { transform: translate(0, 0); }
     50% { transform: translate(20px, -20px); }
   }
-  
   @keyframes slideUp {
     from {
       transform: translateY(50px);
@@ -1444,7 +1321,6 @@ const globalStyles = `
   }
 `;
 
-// Inject global styles
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.textContent = globalStyles;
