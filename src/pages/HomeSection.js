@@ -1,226 +1,374 @@
 import React from 'react';
 
 export default function HomeSection({ 
-  user, 
-  courses, 
-  handleCourseClick,
+  feedPosts,
+  loadingFeed,
+  feedError,
+  newPostContent,
+  setNewPostContent,
+  newPostImage,
+  setNewPostImage,
+  posting,
+  handleCreatePost,
+  handleLikePost,
   hoveredButton,
+  pressedButton,
   handleButtonMouseEnter,
-  handleButtonMouseLeave
+  handleButtonMouseLeave,
+  handleButtonMouseDown,
+  handleButtonMouseUp
 }) {
+  
+  const handleCreatePostClick = () => {
+    if (!newPostContent.trim() && !newPostImage) return;
+    handleCreatePost({ content: newPostContent, image: newPostImage });
+  };
+
   return (
-    <div style={styles.fadeIn}>
-      <h2 style={styles.sectionTitle}>🏠 Home</h2>
-      <div style={styles.welcomeCard}>
-        <h3 style={styles.welcomeTitle}>Welcome back, {user?.profile?.full_name || 'Student'}!</h3>
-        <p style={styles.welcomeText}>Continue your learning journey with Study-Mart</p>
-        <div style={styles.welcomeGlow}></div>
+    <div style={styles.container}>
+      {/* Welcome Header */}
+      <div style={styles.welcomeHeader}>
+        <h1 style={styles.welcomeTitle}>Welcome to Study Mart</h1>
+        <p style={styles.welcomeSubtitle}>Your Learning Journey Starts Here</p>
+        <div style={styles.headerGlow}></div>
       </div>
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <h3 style={styles.statNumber}>0</h3>
-          <p style={styles.statLabel}>Courses In Progress</p>
-        </div>
-        <div style={styles.statCard}>
-          <h3 style={styles.statNumber}>0</h3>
-          <p style={styles.statLabel}>Completed Courses</p>
-        </div>
-        <div style={styles.statCard}>
-          <h3 style={styles.statNumber}>{courses.length}</h3>
-          <p style={styles.statLabel}>Available Courses</p>
-        </div>
-      </div>
-      <h3 style={styles.subTitle}>Continue Learning</h3>
-      <div style={styles.courseGrid}>
-        {courses.slice(0,3).map(course => (
-          <div 
-            key={course.id} 
-            style={styles.courseCard} 
-            onClick={() => handleCourseClick(course)}
-            onMouseEnter={() => handleButtonMouseEnter(`course-${course.id}`)}
-            onMouseLeave={handleButtonMouseLeave}
+
+      {/* Create Post Card */}
+      <div style={styles.createPostCard}>
+        <textarea
+          placeholder="What's on your mind?"
+          value={newPostContent}
+          onChange={(e) => setNewPostContent(e.target.value)}
+          style={styles.postInput}
+          rows="3"
+        />
+        
+        <div style={styles.postActions}>
+          <label style={styles.imageUploadLabel}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setNewPostImage(e.target.files[0])}
+              style={{ display: 'none' }}
+            />
+            <span style={styles.imageUploadIcon}>📷</span>
+          </label>
+          
+          {newPostImage && (
+            <span style={styles.imageName}>{newPostImage.name}</span>
+          )}
+          
+          <button
+            onClick={handleCreatePostClick}
+            disabled={posting || (!newPostContent.trim() && !newPostImage)}
+            style={{
+              ...styles.postButton,
+              ...(posting || (!newPostContent.trim() && !newPostImage) ? styles.disabled : {})
+            }}
           >
-            <img src={course.thumbnail_url || 'https://picsum.photos/300/150?random=1'} alt={course.title} style={styles.courseImage} />
-            <div style={styles.courseContent}>
-              <h4 style={styles.courseTitle}>{course.title}</h4>
-              <p style={styles.courseInstructor}>By {course.profiles?.full_name || 'Instructor'}</p>
-              <div style={styles.courseFooter}>
-                <span style={styles.coursePrice}>${course.price || 0}</span>
-                <span style={styles.courseLevel}>{course.level}</span>
+            {posting ? 'Posting...' : 'Post'}
+          </button>
+        </div>
+      </div>
+
+      {/* Feed Posts */}
+      <div style={styles.feedContainer}>
+        <h2 style={styles.feedTitle}>Recent Posts</h2>
+        
+        {loadingFeed ? (
+          <div style={styles.loadingContainer}>
+            <div style={styles.loader}></div>
+          </div>
+        ) : feedError ? (
+          <div style={styles.errorMessage}>{feedError}</div>
+        ) : !feedPosts || feedPosts.length === 0 ? (
+          <div style={styles.emptyState}>
+            <p>No posts yet. Be the first to post!</p>
+          </div>
+        ) : (
+          feedPosts.map(post => (
+            <div key={post.id} style={styles.postCard}>
+              <div style={styles.postHeader}>
+                <div style={styles.avatar}>
+                  {post.user?.avatar_url ? (
+                    <img src={post.user.avatar_url} alt={post.user.full_name} style={styles.avatarImage} />
+                  ) : (
+                    <span style={styles.avatarPlaceholder}>👤</span>
+                  )}
+                </div>
+                <div style={styles.postInfo}>
+                  <h4 style={styles.authorName}>{post.user?.full_name || 'Unknown User'}</h4>
+                  <span style={styles.postTime}>
+                    {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently'}
+                  </span>
+                </div>
+              </div>
+              
+              <p style={styles.postContent}>{post.content}</p>
+              
+              {post.image_url && (
+                <img src={post.image_url} alt="Post" style={styles.postImage} />
+              )}
+              
+              <div style={styles.postFooter}>
+                <button
+                  onClick={() => handleLikePost(post.id)}
+                  style={{
+                    ...styles.likeButton,
+                    ...(post.liked ? styles.liked : {})
+                  }}
+                >
+                  ❤️ {post.likes || 0}
+                </button>
+                <button style={styles.commentButton}>
+                  💬 {post.comments || 0}
+                </button>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
 }
 
 const styles = {
-  fadeIn: {
-    animation: 'fadeIn 0.5s ease-in-out',
+  container: {
+    width: '100%',
+    maxWidth: '800px',
+    margin: '0 auto',
   },
-  sectionTitle: {
-    fontSize: '32px',
-    fontWeight: '700',
-    marginBottom: '25px',
-    background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #FF6B35 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    display: 'inline-block',
-    '@media (max-width: 768px)': {
-      fontSize: '24px',
-    },
-  },
-  subTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: '#1E293B',
-    margin: '30px 0 20px',
+  welcomeHeader: {
     position: 'relative',
-    paddingLeft: '15px',
-    borderLeft: '4px solid #FF6B35',
-    '@media (max-width: 768px)': {
-      fontSize: '20px',
-    },
-  },
-  welcomeCard: {
-    position: 'relative',
-    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
-    padding: '40px',
-    borderRadius: '24px',
-    marginBottom: '40px',
-    boxShadow: '0 20px 40px rgba(37, 99, 235, 0.15)',
+    textAlign: 'center',
+    padding: '40px 20px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    borderRadius: '12px',
+    marginBottom: '30px',
+    color: 'white',
     overflow: 'hidden',
-    border: '1px solid rgba(46, 204, 113, 0.2)',
-    '@media (max-width: 768px)': {
-      padding: '20px',
-    },
   },
-  welcomeGlow: {
+  headerGlow: {
     position: 'absolute',
-    top: '-50%',
+    top: '-30%',
     right: '-10%',
-    width: '300px',
-    height: '300px',
-    background: 'radial-gradient(circle, rgba(255,107,53,0.2) 0%, rgba(46,204,113,0.1) 50%, transparent 70%)',
+    width: '200px',
+    height: '200px',
+    background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
     borderRadius: '50%',
-    pointerEvents: 'none',
   },
   welcomeTitle: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: '10px',
-    position: 'relative',
-    zIndex: 1,
-    '@media (max-width: 768px)': {
-      fontSize: '20px',
-    },
-  },
-  welcomeText: {
-    fontSize: '18px',
-    color: '#4B5563',
-    position: 'relative',
-    zIndex: 1,
-    '@media (max-width: 768px)': {
-      fontSize: '16px',
-    },
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-    marginBottom: '40px',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-  statCard: {
-    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
-    padding: '25px',
-    borderRadius: '20px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
-    textAlign: 'center',
-    border: '1px solid rgba(37, 99, 235, 0.1)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    ':hover': {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 15px 30px rgba(255,107,53,0.15)',
-    },
-  },
-  statNumber: {
     fontSize: '36px',
     fontWeight: '700',
-    color: '#FF6B35',
     marginBottom: '10px',
+    position: 'relative',
+    zIndex: 1,
   },
-  statLabel: {
-    fontSize: '16px',
-    color: '#4B5563',
-    fontWeight: '500',
+  welcomeSubtitle: {
+    fontSize: '18px',
+    opacity: 0.9,
+    position: 'relative',
+    zIndex: 1,
   },
-  courseGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '25px',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
-    },
+  createPostCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '30px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
   },
-  courseCard: {
-    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
-    borderRadius: '16px',
-    overflow: 'hidden',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
-    border: '1px solid rgba(46, 204, 113, 0.2)',
-    cursor: 'pointer',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    ':hover': {
-      transform: 'translateY(-8px)',
-      boxShadow: '0 20px 30px rgba(255,107,53,0.2)',
-      borderColor: '#FF6B35',
-    },
-  },
-  courseImage: {
+  postInput: {
     width: '100%',
-    height: '160px',
+    padding: '12px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '8px',
+    fontSize: '16px',
+    resize: 'none',
+    marginBottom: '15px',
+    fontFamily: 'inherit',
+  },
+  postActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  imageUploadLabel: {
+    cursor: 'pointer',
+    padding: '8px 12px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '8px',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      backgroundColor: '#e2e8f0',
+    },
+  },
+  imageUploadIcon: {
+    fontSize: '20px',
+  },
+  imageName: {
+    fontSize: '14px',
+    color: '#64748b',
+    flex: 1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  postButton: {
+    padding: '10px 24px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    marginLeft: 'auto',
+  },
+  disabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+  },
+  feedContainer: {
+    width: '100%',
+  },
+  feedTitle: {
+    fontSize: '24px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '20px',
+  },
+  postCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '20px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  },
+  postHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '12px',
+  },
+  avatar: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '24px',
+    backgroundColor: '#e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
     objectFit: 'cover',
   },
-  courseContent: {
-    padding: '20px',
+  avatarPlaceholder: {
+    fontSize: '24px',
   },
-  courseTitle: {
-    fontSize: '18px',
+  postInfo: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: '16px',
     fontWeight: '600',
-    marginBottom: '8px',
-    color: '#1E293B',
+    color: '#1e293b',
+    margin: '0 0 4px 0',
   },
-  courseInstructor: {
-    fontSize: '14px',
-    color: '#64748B',
-    marginBottom: '15px',
-  },
-  courseFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '15px',
-  },
-  coursePrice: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#FF6B35',
-  },
-  courseLevel: {
+  postTime: {
     fontSize: '12px',
-    padding: '4px 10px',
-    backgroundColor: '#EFF6FF',
-    borderRadius: '20px',
-    color: '#2563EB',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    color: '#64748b',
+  },
+  postContent: {
+    fontSize: '16px',
+    color: '#334155',
+    lineHeight: '1.5',
+    marginBottom: '15px',
+  },
+  postImage: {
+    width: '100%',
+    maxHeight: '400px',
+    objectFit: 'cover',
+    borderRadius: '8px',
+    marginBottom: '15px',
+  },
+  postFooter: {
+    display: 'flex',
+    gap: '10px',
+    borderTop: '1px solid #e2e8f0',
+    paddingTop: '15px',
+  },
+  likeButton: {
+    padding: '8px 16px',
+    backgroundColor: '#f1f5f9',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s ease',
+  },
+  liked: {
+    backgroundColor: '#fee2e2',
+    color: '#ef4444',
+  },
+  commentButton: {
+    padding: '8px 16px',
+    backgroundColor: '#f1f5f9',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s ease',
+  },
+  loadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '40px',
+  },
+  loader: {
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #667eea',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    animation: 'spin 1s linear infinite',
+  },
+  errorMessage: {
+    padding: '20px',
+    backgroundColor: '#fee2e2',
+    color: '#dc2626',
+    borderRadius: '8px',
+    textAlign: 'center',
+  },
+  emptyState: {
+    padding: '40px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    textAlign: 'center',
+    color: '#64748b',
+    fontSize: '16px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   },
 };
+
+const globalStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = globalStyles;
+  document.head.appendChild(style);
+}
