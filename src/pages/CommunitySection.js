@@ -122,45 +122,8 @@ export default function CommunitySection({
       }
     });
 
-    const likeSubscriptions = localPosts.map(post => 
-      subscribeToLikes(post.id, (likeData) => {
-        if (likeData) {
-          setLocalPosts(prev => 
-            prev.map(p => 
-              p.id === likeData.postId 
-                ? { ...p, likes: likeData.count }
-                : p
-            )
-          );
-        }
-      })
-    );
-
-    const commentSubscriptions = localPosts.map(post =>
-      subscribeToComments(post.id, (newComment) => {
-        if (newComment) {
-          setLocalPosts(prev => 
-            prev.map(p => 
-              p.id === newComment.post_id 
-                ? { ...p, comments: (p.comments || 0) + 1 }
-                : p
-            )
-          );
-          
-          if (selectedPost?.id === newComment.post_id) {
-            setPostComments(prev => ({
-              ...prev,
-              [newComment.post_id]: [...(prev[newComment.post_id] || []), newComment]
-            }));
-          }
-        }
-      })
-    );
-
     return () => {
-      postSubscription.unsubscribe();
-      likeSubscriptions.forEach(sub => sub.unsubscribe());
-      commentSubscriptions.forEach(sub => sub.unsubscribe());
+      if (postSubscription) postSubscription.unsubscribe();
     };
   };
 
@@ -239,11 +202,15 @@ export default function CommunitySection({
         }
       }
       
-      await handleCreatePost({
+      const postData = {
         content: newPostContent,
         media_url: mediaUrl,
         media_type: finalMediaType
-      });
+      };
+      
+      if (handleCreatePost) {
+        await handleCreatePost(postData);
+      }
       
       setNewPostContent('');
       setMediaFile(null);
@@ -259,19 +226,23 @@ export default function CommunitySection({
   };
 
   const handleLikeWithRealTime = async (postId) => {
-    const result = await toggleLike(postId);
-    if (result.success) {
-      setLocalPosts(prev => 
-        prev.map(p => 
-          p.id === postId 
-            ? { 
-                ...p, 
-                liked: !p.liked,
-                likes: p.liked ? (p.likes - 1) : (p.likes + 1)
-              }
-            : p
-        )
-      );
+    try {
+      const result = await toggleLike(postId);
+      if (result && result.success) {
+        setLocalPosts(prev => 
+          prev.map(p => 
+            p.id === postId 
+              ? { 
+                  ...p, 
+                  liked: !p.liked,
+                  likes: p.liked ? (p.likes - 1) : (p.likes + 1)
+                }
+              : p
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
     }
   };
 
@@ -298,9 +269,14 @@ export default function CommunitySection({
   const handleAddComment = async (postId) => {
     if (!commentText.trim()) return;
     
-    const result = await addComment(postId, commentText);
-    if (result.success) {
-      setCommentText('');
+    try {
+      const result = await addComment(postId, commentText);
+      if (result && result.success) {
+        setCommentText('');
+        await fetchComments(postId);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
     }
   };
 
