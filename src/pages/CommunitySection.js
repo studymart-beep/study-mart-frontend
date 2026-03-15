@@ -55,6 +55,7 @@ export default function CommunitySection({
   const [postComments, setPostComments] = useState({});
   const [localPosts, setLocalPosts] = useState([]);
   const [realTimeEnabled, setRealTimeEnabled] = useState(false);
+  const [localPosting, setLocalPosting] = useState(false);
 
   const tabs = [
     { 
@@ -219,9 +220,9 @@ export default function CommunitySection({
 
   const handleCreatePostWithMedia = async () => {
     if (!newPostContent.trim() && !mediaFile) return;
-    if (posting) return;
+    if (localPosting) return;
     
-    setPosting(true);
+    setLocalPosting(true);
     
     try {
       let mediaUrl = null;
@@ -253,7 +254,7 @@ export default function CommunitySection({
     } catch (error) {
       console.error('Error creating post:', error);
     } finally {
-      setPosting(false);
+      setLocalPosting(false);
     }
   };
 
@@ -400,13 +401,13 @@ export default function CommunitySection({
                 
                 <button
                   onClick={handleCreatePostWithMedia}
-                  disabled={posting || (!newPostContent.trim() && !mediaFile)}
+                  disabled={localPosting || (!newPostContent.trim() && !mediaFile)}
                   style={{
                     ...styles.postButton,
-                    ...(posting || (!newPostContent.trim() && !mediaFile) ? styles.disabled : {})
+                    ...(localPosting || (!newPostContent.trim() && !mediaFile) ? styles.disabled : {})
                   }}
                 >
-                  {posting ? 'Posting...' : 'Post'}
+                  {localPosting ? 'Posting...' : 'Post'}
                 </button>
               </div>
             </div>
