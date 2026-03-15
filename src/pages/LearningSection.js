@@ -1,9 +1,11 @@
 import React from 'react';
 
-export default function LearningSection({ 
-  courses, 
-  handleCourseClick,
-  setActiveSection,
+export default function LearningSection({
+  courses = [],
+  categories = [],
+  instructors = [],
+  loading = false,
+  error = null,
   hoveredButton,
   pressedButton,
   handleButtonMouseEnter,
@@ -11,109 +13,194 @@ export default function LearningSection({
   handleButtonMouseDown,
   handleButtonMouseUp
 }) {
+  
+  const safeCourses = courses || [];
+  const safeCategories = categories || [];
+  const safeInstructors = instructors || [];
+
   return (
-    <div style={styles.fadeIn}>
-      <h2 style={styles.sectionTitle}>📚 Learning</h2>
-      {courses.length > 0 ? (
-        <div style={styles.courseGrid}>
-          {courses.map(course => (
-            <div 
-              key={course.id} 
-              style={styles.courseCard} 
-              onClick={() => handleCourseClick(course)}
-              onMouseEnter={() => handleButtonMouseEnter(`course-${course.id}`)}
-              onMouseLeave={handleButtonMouseLeave}
-            >
-              <img src={course.thumbnail_url || 'https://picsum.photos/300/150?random=2'} alt={course.title} style={styles.courseImage} />
-              <div style={styles.courseContent}>
-                <h3 style={styles.courseTitle}>{course.title}</h3>
-                <p style={styles.courseInstructor}>By {course.profiles?.full_name || 'Admin'}</p>
-                <div style={styles.courseFooter}>
-                  <span style={styles.coursePrice}>${course.price || 0}</span>
-                  <span style={styles.courseLevel}>{course.level}</span>
-                </div>
-                <button 
-                  style={{
-                    ...styles.enrollButton,
-                    ...(hoveredButton === `enroll-${course.id}` ? styles.enrollButtonHover : {}),
-                    ...(pressedButton === `enroll-${course.id}` ? styles.enrollButtonPressed : {})
-                  }}
-                  onMouseEnter={() => handleButtonMouseEnter(`enroll-${course.id}`)}
-                  onMouseLeave={handleButtonMouseLeave}
-                  onMouseDown={() => handleButtonMouseDown(`enroll-${course.id}`)}
-                  onMouseUp={handleButtonMouseUp}
-                >
-                  Start Learning
-                </button>
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>Learning Center</h1>
+        <p style={styles.subtitle}>Expand your knowledge with our courses</p>
+      </div>
+
+      {/* Categories */}
+      <div style={styles.categoriesSection}>
+        <h2 style={styles.sectionTitle}>Browse Categories</h2>
+        <div style={styles.categoriesGrid}>
+          {safeCategories.length > 0 ? (
+            safeCategories.map(cat => (
+              <div key={cat.id} style={styles.categoryCard}>
+                <span style={styles.categoryIcon}>{cat.icon || '📚'}</span>
+                <h3 style={styles.categoryName}>{cat.name}</h3>
+                <p style={styles.categoryCount}>{cat.count || 0} courses</p>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div style={styles.emptyState}>No categories available</div>
+          )}
         </div>
-      ) : (
-        <div style={styles.emptyState}>
-          <p>You haven't started any courses yet.</p>
-          <button 
-            style={{
-              ...styles.browseButton,
-              ...(hoveredButton === 'browse' ? styles.browseButtonHover : {}),
-              ...(pressedButton === 'browse' ? styles.browseButtonPressed : {})
-            }}
-            onClick={() => setActiveSection('marketplace')}
-            onMouseEnter={() => handleButtonMouseEnter('browse')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('browse')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            Browse Marketplace
-          </button>
+      </div>
+
+      {/* Featured Courses */}
+      <div style={styles.coursesSection}>
+        <h2 style={styles.sectionTitle}>Featured Courses</h2>
+        <div style={styles.coursesGrid}>
+          {safeCourses.length > 0 ? (
+            safeCourses.map(course => (
+              <div key={course.id} style={styles.courseCard}>
+                <div style={styles.courseImage}>
+                  {course.image_url ? (
+                    <img src={course.image_url} alt={course.title} style={styles.courseImg} />
+                  ) : (
+                    <span style={styles.courseImagePlaceholder}>📖</span>
+                  )}
+                </div>
+                <div style={styles.courseContent}>
+                  <h3 style={styles.courseTitle}>{course.title}</h3>
+                  <p style={styles.courseInstructor}>{course.instructor || 'Expert Instructor'}</p>
+                  <p style={styles.courseDescription}>{course.description || 'No description available'}</p>
+                  <div style={styles.courseMeta}>
+                    <span>⏱️ {course.duration || 'Self-paced'}</span>
+                    <span>⭐ {course.rating || '4.5'} ({course.reviews || 0})</span>
+                  </div>
+                  <button style={styles.enrollButton}>Enroll Now</button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={styles.emptyState}>No courses available</div>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Top Instructors */}
+      <div style={styles.instructorsSection}>
+        <h2 style={styles.sectionTitle}>Top Instructors</h2>
+        <div style={styles.instructorsGrid}>
+          {safeInstructors.length > 0 ? (
+            safeInstructors.map(instructor => (
+              <div key={instructor.id} style={styles.instructorCard}>
+                <div style={styles.instructorAvatar}>
+                  {instructor.avatar_url ? (
+                    <img src={instructor.avatar_url} alt={instructor.name} style={styles.instructorImage} />
+                  ) : (
+                    <span style={styles.instructorAvatarPlaceholder}>👤</span>
+                  )}
+                </div>
+                <h3 style={styles.instructorName}>{instructor.name}</h3>
+                <p style={styles.instructorTitle}>{instructor.title || 'Expert Instructor'}</p>
+                <p style={styles.instructorStudents}>{instructor.students || 0} students</p>
+              </div>
+            ))
+          ) : (
+            <div style={styles.emptyState}>No instructors available</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 const styles = {
-  fadeIn: {
-    animation: 'fadeIn 0.5s ease-in-out',
+  container: {
+    width: '100%',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '20px',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '40px',
+  },
+  title: {
+    fontSize: '36px',
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: '10px',
+  },
+  subtitle: {
+    fontSize: '18px',
+    color: '#64748b',
   },
   sectionTitle: {
-    fontSize: '32px',
-    fontWeight: '700',
-    marginBottom: '25px',
-    background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #FF6B35 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    display: 'inline-block',
-    '@media (max-width: 768px)': {
-      fontSize: '24px',
+    fontSize: '24px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '20px',
+  },
+  categoriesSection: {
+    marginBottom: '40px',
+  },
+  categoriesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '20px',
+  },
+  categoryCard: {
+    backgroundColor: '#f8fafc',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer',
+    ':hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
     },
   },
-  courseGrid: {
+  categoryIcon: {
+    fontSize: '40px',
+    display: 'block',
+    marginBottom: '10px',
+  },
+  categoryName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '5px',
+  },
+  categoryCount: {
+    fontSize: '14px',
+    color: '#64748b',
+  },
+  coursesSection: {
+    marginBottom: '40px',
+  },
+  coursesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '25px',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
-    },
+    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+    gap: '20px',
   },
   courseCard: {
-    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
-    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
     overflow: 'hidden',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.05)',
-    border: '1px solid rgba(46, 204, 113, 0.2)',
-    cursor: 'pointer',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    transition: 'all 0.3s ease',
     ':hover': {
-      transform: 'translateY(-8px)',
-      boxShadow: '0 20px 30px rgba(255,107,53,0.2)',
-      borderColor: '#FF6B35',
+      transform: 'translateY(-5px)',
+      boxShadow: '0 15px 30px rgba(0,0,0,0.15)',
     },
   },
   courseImage: {
+    height: '180px',
+    backgroundColor: '#667eea',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontSize: '48px',
+  },
+  courseImg: {
     width: '100%',
-    height: '160px',
+    height: '100%',
     objectFit: 'cover',
+  },
+  courseImagePlaceholder: {
+    fontSize: '48px',
   },
   courseContent: {
     padding: '20px',
@@ -121,79 +208,102 @@ const styles = {
   courseTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    marginBottom: '8px',
-    color: '#1E293B',
+    color: '#1e293b',
+    marginBottom: '5px',
   },
   courseInstructor: {
     fontSize: '14px',
-    color: '#64748B',
-    marginBottom: '15px',
+    color: '#64748b',
+    marginBottom: '10px',
   },
-  courseFooter: {
+  courseDescription: {
+    fontSize: '14px',
+    color: '#334155',
+    marginBottom: '15px',
+    lineHeight: '1.5',
+  },
+  courseMeta: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    fontSize: '13px',
+    color: '#64748b',
     marginBottom: '15px',
-  },
-  coursePrice: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#FF6B35',
-  },
-  courseLevel: {
-    fontSize: '12px',
-    padding: '4px 10px',
-    backgroundColor: '#EFF6FF',
-    borderRadius: '20px',
-    color: '#2563EB',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
   },
   enrollButton: {
     width: '100%',
-    padding: '12px',
-    background: 'linear-gradient(135deg, #2563EB 0%, #1E3A8A 100%)',
+    padding: '10px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: '15px',
+    borderRadius: '8px',
+    fontSize: '14px',
     fontWeight: '600',
+    cursor: 'pointer',
     transition: 'all 0.2s ease',
+    ':hover': {
+      opacity: 0.9,
+      transform: 'scale(1.02)',
+    },
   },
-  enrollButtonHover: {
-    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
-    transform: 'scale(1.02)',
-    boxShadow: '0 8px 20px rgba(255,107,53,0.4)',
+  instructorsSection: {
+    marginBottom: '40px',
   },
-  enrollButtonPressed: {
-    transform: 'scale(0.98)',
-    boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.2)',
+  instructorsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gap: '20px',
+  },
+  instructorCard: {
+    backgroundColor: '#ffffff',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    transition: 'all 0.3s ease',
+    ':hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 15px 30px rgba(0,0,0,0.15)',
+    },
+  },
+  instructorAvatar: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50px',
+    backgroundColor: '#e2e8f0',
+    margin: '0 auto 15px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  instructorImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  instructorAvatarPlaceholder: {
+    fontSize: '40px',
+  },
+  instructorName: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '5px',
+  },
+  instructorTitle: {
+    fontSize: '14px',
+    color: '#64748b',
+    marginBottom: '10px',
+  },
+  instructorStudents: {
+    fontSize: '13px',
+    color: '#667eea',
+    fontWeight: '600',
   },
   emptyState: {
     textAlign: 'center',
-    padding: '60px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-  },
-  browseButton: {
-    padding: '12px 30px',
-    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: 'pointer',
+    padding: '40px',
+    color: '#64748b',
     fontSize: '16px',
-    marginTop: '20px',
-    fontWeight: '600',
-    boxShadow: '0 8px 20px rgba(255,107,53,0.3)',
-  },
-  browseButtonHover: {
-    transform: 'scale(1.05)',
-    boxShadow: '0 12px 30px rgba(46,204,113,0.4)',
-  },
-  browseButtonPressed: {
-    transform: 'scale(0.98)',
   },
 };

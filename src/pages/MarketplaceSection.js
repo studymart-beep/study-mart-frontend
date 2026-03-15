@@ -1,15 +1,11 @@
 import React from 'react';
-import SellerApplicationModal from '../components/SellerApplicationModal';
-import SellerDashboard from '../components/SellerDashboard';
 
-export default function MarketplaceSection({ 
-  sellerApplicationStatus,
-  isSeller,
-  products,
-  loadingProducts,
-  showSellerApplication,
-  setShowSellerApplication,
-  handleBuyProduct,
+export default function MarketplaceSection({
+  products = [],
+  categories = [],
+  sellers = [],
+  loading = false,
+  error = null,
   hoveredButton,
   pressedButton,
   handleButtonMouseEnter,
@@ -17,330 +13,297 @@ export default function MarketplaceSection({
   handleButtonMouseDown,
   handleButtonMouseUp
 }) {
+
+  const safeProducts = products || [];
+  const safeCategories = categories || [];
+  const safeSellers = sellers || [];
+
   return (
-    <div style={styles.fadeIn}>
-      <div style={styles.marketplaceHeader}>
-        <h2 style={styles.sectionTitle}>🛒 Marketplace</h2>
-        {!sellerApplicationStatus && !isSeller && (
-          <button 
-            style={{
-              ...styles.becomeSellerButton,
-              ...(hoveredButton === 'become-seller' ? styles.becomeSellerButtonHover : {}),
-              ...(pressedButton === 'become-seller' ? styles.becomeSellerButtonPressed : {})
-            }}
-            onClick={() => setShowSellerApplication(true)}
-            onMouseEnter={() => handleButtonMouseEnter('become-seller')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('become-seller')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            Become a Seller
-          </button>
-        )}
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>Marketplace</h1>
+        <p style={styles.subtitle}>Buy and sell educational resources</p>
       </div>
 
-      {/* Seller Application Status */}
-      {sellerApplicationStatus && sellerApplicationStatus.status === 'pending' && (
-        <div style={styles.applicationStatus}>
-          <p>Your seller application is under review.</p>
-          <p>Status: <strong>Pending</strong></p>
-        </div>
-      )}
-
-      {sellerApplicationStatus && sellerApplicationStatus.status === 'rejected' && (
-        <div style={styles.applicationStatusRejected}>
-          <p>Your seller application was rejected.</p>
-          <p>Status: <strong>Rejected</strong></p>
-        </div>
-      )}
-
-      {/* Seller Dashboard for approved sellers */}
-      {isSeller && (
-        <div style={styles.sellerDashboardContainer}>
-          <SellerDashboard />
-        </div>
-      )}
-
-      {/* Product Grid */}
-      <h3 style={styles.subTitle}>Available Products</h3>
-      {loadingProducts ? (
-        <div style={styles.loadingContainer}>
-          <div style={styles.loader}></div>
-          <p style={styles.loadingText}>Loading products...</p>
-        </div>
-      ) : products.length === 0 ? (
-        <div style={styles.emptyState}>
-          <p>No products available yet.</p>
-          {!isSeller && !sellerApplicationStatus && (
-            <button 
-              style={{
-                ...styles.browseButton,
-                ...(hoveredButton === 'become-seller-empty' ? styles.browseButtonHover : {}),
-                ...(pressedButton === 'become-seller-empty' ? styles.browseButtonPressed : {})
-              }}
-              onClick={() => setShowSellerApplication(true)}
-              onMouseEnter={() => handleButtonMouseEnter('become-seller-empty')}
-              onMouseLeave={handleButtonMouseLeave}
-              onMouseDown={() => handleButtonMouseDown('become-seller-empty')}
-              onMouseUp={handleButtonMouseUp}
-            >
-              Become a Seller
-            </button>
+      {/* Categories */}
+      <div style={styles.categoriesSection}>
+        <h2 style={styles.sectionTitle}>Shop by Category</h2>
+        <div style={styles.categoriesGrid}>
+          {safeCategories.length > 0 ? (
+            safeCategories.map(cat => (
+              <div key={cat.id} style={styles.categoryCard}>
+                <span style={styles.categoryIcon}>{cat.icon || '📦'}</span>
+                <h3 style={styles.categoryName}>{cat.name}</h3>
+                <p style={styles.categoryCount}>{cat.count || 0} items</p>
+              </div>
+            ))
+          ) : (
+            <div style={styles.emptyState}>No categories available</div>
           )}
         </div>
-      ) : (
-        <div style={styles.productGrid}>
-          {products.map(product => (
-            <div 
-              key={product.id} 
-              style={styles.productCard}
-              onMouseEnter={() => handleButtonMouseEnter(`product-${product.id}`)}
-              onMouseLeave={handleButtonMouseLeave}
-            >
-              {product.images && product.images.length > 0 ? (
-                <img 
-                  src={`https://study-mart-backend.onrender.com${product.images.find(img => img.is_primary)?.image_url || product.images[0].image_url}`}
-                  alt={product.name}
-                  style={styles.productImage}
-                />
-              ) : (
-                <div style={styles.productImagePlaceholder}>📦</div>
-              )}
-              <div style={styles.productContent}>
-                <h4 style={styles.productName}>{product.name}</h4>
-                <p style={styles.productSeller}>{product.seller?.business_name}</p>
-                <p style={styles.productPrice}>₦{product.price}</p>
-                <p style={styles.productDescription}>
-                  {product.description?.substring(0, 60)}...
-                </p>
-                <button 
-                  style={{
-                    ...styles.buyButton,
-                    ...(hoveredButton === `buy-${product.id}` ? styles.buyButtonHover : {}),
-                    ...(pressedButton === `buy-${product.id}` ? styles.buyButtonPressed : {})
-                  }}
-                  onClick={() => handleBuyProduct(product)}
-                  onMouseEnter={() => handleButtonMouseEnter(`buy-${product.id}`)}
-                  onMouseLeave={handleButtonMouseLeave}
-                  onMouseDown={() => handleButtonMouseDown(`buy-${product.id}`)}
-                  onMouseUp={handleButtonMouseUp}
-                >
-                  Buy Now
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
 
-      {showSellerApplication && (
-        <SellerApplicationModal 
-          onClose={() => setShowSellerApplication(false)} 
-        />
-      )}
+      {/* Featured Products */}
+      <div style={styles.productsSection}>
+        <h2 style={styles.sectionTitle}>Featured Products</h2>
+        <div style={styles.productsGrid}>
+          {safeProducts.length > 0 ? (
+            safeProducts.map(product => (
+              <div key={product.id} style={styles.productCard}>
+                <div style={styles.productImage}>
+                  {product.image_url ? (
+                    <img src={product.image_url} alt={product.title} style={styles.productImg} />
+                  ) : (
+                    <span style={styles.productImagePlaceholder}>📚</span>
+                  )}
+                </div>
+                <div style={styles.productContent}>
+                  <h3 style={styles.productTitle}>{product.title}</h3>
+                  <p style={styles.productSeller}>by {product.seller || 'Unknown Seller'}</p>
+                  <p style={styles.productDescription}>{product.description || 'No description available'}</p>
+                  <div style={styles.productFooter}>
+                    <span style={styles.productPrice}>${product.price || '0.00'}</span>
+                    <button style={styles.buyButton}>Buy Now</button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={styles.emptyState}>No products available</div>
+          )}
+        </div>
+      </div>
+
+      {/* Top Sellers */}
+      <div style={styles.sellersSection}>
+        <h2 style={styles.sectionTitle}>Top Sellers</h2>
+        <div style={styles.sellersGrid}>
+          {safeSellers.length > 0 ? (
+            safeSellers.map(seller => (
+              <div key={seller.id} style={styles.sellerCard}>
+                <div style={styles.sellerAvatar}>
+                  {seller.avatar_url ? (
+                    <img src={seller.avatar_url} alt={seller.name} style={styles.sellerImage} />
+                  ) : (
+                    <span style={styles.sellerAvatarPlaceholder}>👤</span>
+                  )}
+                </div>
+                <h3 style={styles.sellerName}>{seller.name}</h3>
+                <p style={styles.sellerProducts}>{seller.products || 0} products</p>
+                <p style={styles.sellerRating}>⭐ {seller.rating || '4.5'}</p>
+              </div>
+            ))
+          ) : (
+            <div style={styles.emptyState}>No sellers available</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 const styles = {
-  fadeIn: {
-    animation: 'fadeIn 0.5s ease-in-out',
+  container: {
+    width: '100%',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '20px',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '40px',
+  },
+  title: {
+    fontSize: '36px',
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: '10px',
+  },
+  subtitle: {
+    fontSize: '18px',
+    color: '#64748b',
   },
   sectionTitle: {
-    fontSize: '32px',
-    fontWeight: '700',
-    marginBottom: '25px',
-    background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #FF6B35 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    display: 'inline-block',
-    '@media (max-width: 768px)': {
-      fontSize: '24px',
-    },
-  },
-  subTitle: {
     fontSize: '24px',
     fontWeight: '600',
-    color: '#1E293B',
-    margin: '30px 0 20px',
-    position: 'relative',
-    paddingLeft: '15px',
-    borderLeft: '4px solid #FF6B35',
-    '@media (max-width: 768px)': {
-      fontSize: '20px',
-    },
-  },
-  marketplaceHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    color: '#1e293b',
     marginBottom: '20px',
-    flexWrap: 'wrap',
-    gap: '10px',
   },
-  becomeSellerButton: {
-    padding: '10px 20px',
-    background: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-    boxShadow: '0 8px 20px rgba(46,204,113,0.3)',
+  categoriesSection: {
+    marginBottom: '40px',
   },
-  becomeSellerButtonHover: {
-    transform: 'scale(1.05)',
-    boxShadow: '0 12px 30px rgba(255,107,53,0.4)',
-  },
-  becomeSellerButtonPressed: {
-    transform: 'scale(0.98)',
-  },
-  applicationStatus: {
-    backgroundColor: '#fef3c7',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    border: '1px solid #fcd34d',
-  },
-  applicationStatusRejected: {
-    backgroundColor: '#fee2e2',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    border: '1px solid #f87171',
-  },
-  sellerDashboardContainer: {
-    marginBottom: '30px',
-    padding: '20px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '12px',
-    border: '1px solid #e0e0e0',
-  },
-  productGrid: {
+  categoriesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
     gap: '20px',
-    marginTop: '20px',
-    '@media (max-width: 768px)': {
-      gridTemplateColumns: '1fr',
+  },
+  categoryCard: {
+    backgroundColor: '#f8fafc',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer',
+    ':hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
     },
+  },
+  categoryIcon: {
+    fontSize: '40px',
+    display: 'block',
+    marginBottom: '10px',
+  },
+  categoryName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '5px',
+  },
+  categoryCount: {
+    fontSize: '14px',
+    color: '#64748b',
+  },
+  productsSection: {
+    marginBottom: '40px',
+  },
+  productsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '20px',
   },
   productCard: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
     overflow: 'hidden',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    backgroundColor: 'white',
-    transition: 'transform 0.2s',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    transition: 'all 0.3s ease',
     ':hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+      transform: 'translateY(-5px)',
+      boxShadow: '0 15px 30px rgba(0,0,0,0.15)',
     },
   },
   productImage: {
-    width: '100%',
     height: '180px',
+    backgroundColor: '#10b981',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontSize: '48px',
+  },
+  productImg: {
+    width: '100%',
+    height: '100%',
     objectFit: 'cover',
   },
   productImagePlaceholder: {
-    width: '100%',
-    height: '180px',
-    backgroundColor: '#f0f0f0',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     fontSize: '48px',
-    color: '#999',
   },
   productContent: {
-    padding: '15px',
+    padding: '20px',
   },
-  productName: {
-    fontSize: '16px',
+  productTitle: {
+    fontSize: '18px',
     fontWeight: '600',
+    color: '#1e293b',
     marginBottom: '5px',
-    color: '#333',
   },
   productSeller: {
-    fontSize: '13px',
-    color: '#666',
-    marginBottom: '5px',
-  },
-  productPrice: {
-    fontSize: '18px',
-    fontWeight: 'bold',
-    color: '#6366f1',
-    marginBottom: '8px',
+    fontSize: '14px',
+    color: '#64748b',
+    marginBottom: '10px',
   },
   productDescription: {
-    fontSize: '13px',
-    color: '#777',
-    marginBottom: '10px',
-    lineHeight: '1.4',
+    fontSize: '14px',
+    color: '#334155',
+    marginBottom: '15px',
+    lineHeight: '1.5',
+  },
+  productFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  productPrice: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#10b981',
   },
   buyButton: {
-    width: '100%',
-    padding: '10px',
-    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
+    padding: '8px 16px',
+    backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
+    borderRadius: '8px',
     fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      backgroundColor: '#059669',
+    },
   },
-  buyButtonHover: {
-    transform: 'scale(1.02)',
-    boxShadow: '0 8px 20px rgba(255,107,53,0.3)',
+  sellersSection: {
+    marginBottom: '40px',
   },
-  buyButtonPressed: {
-    transform: 'scale(0.98)',
+  sellersGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gap: '20px',
   },
-  loadingContainer: {
+  sellerCard: {
+    backgroundColor: '#ffffff',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    transition: 'all 0.3s ease',
+    ':hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 15px 30px rgba(0,0,0,0.15)',
+    },
+  },
+  sellerAvatar: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50px',
+    backgroundColor: '#e2e8f0',
+    margin: '0 auto 15px',
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '50px',
+    overflow: 'hidden',
   },
-  loader: {
-    border: '4px solid rgba(37, 99, 235, 0.2)',
-    borderTop: '4px solid #FF6B35',
-    borderRight: '4px solid #2ECC71',
-    borderRadius: '50%',
-    width: '50px',
-    height: '50px',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '20px',
+  sellerImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
-  loadingText: {
-    fontSize: '16px',
-    color: '#1E293B',
-    fontWeight: '500',
+  sellerAvatarPlaceholder: {
+    fontSize: '40px',
+  },
+  sellerName: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '5px',
+  },
+  sellerProducts: {
+    fontSize: '14px',
+    color: '#64748b',
+    marginBottom: '5px',
+  },
+  sellerRating: {
+    fontSize: '14px',
+    color: '#f59e0b',
+    fontWeight: '600',
   },
   emptyState: {
     textAlign: 'center',
-    padding: '60px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-  },
-  browseButton: {
-    padding: '12px 30px',
-    background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: 'pointer',
+    padding: '40px',
+    color: '#64748b',
     fontSize: '16px',
-    marginTop: '20px',
-    fontWeight: '600',
-    boxShadow: '0 8px 20px rgba(255,107,53,0.3)',
-  },
-  browseButtonHover: {
-    transform: 'scale(1.05)',
-    boxShadow: '0 12px 30px rgba(46,204,113,0.4)',
-  },
-  browseButtonPressed: {
-    transform: 'scale(0.98)',
   },
 };

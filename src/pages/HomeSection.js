@@ -1,14 +1,14 @@
 import React from 'react';
 
 export default function HomeSection({ 
-  feedPosts,
-  loadingFeed,
-  feedError,
-  newPostContent,
+  feedPosts = [],
+  loadingFeed = false,
+  feedError = null,
+  newPostContent = '',
   setNewPostContent,
-  newPostImage,
+  newPostImage = null,
   setNewPostImage,
-  posting,
+  posting = false,
   handleCreatePost,
   handleLikePost,
   hoveredButton,
@@ -87,41 +87,41 @@ export default function HomeSection({
           </div>
         ) : (
           feedPosts.map(post => (
-            <div key={post.id} style={styles.postCard}>
+            <div key={post?.id || Math.random()} style={styles.postCard}>
               <div style={styles.postHeader}>
                 <div style={styles.avatar}>
-                  {post.user?.avatar_url ? (
-                    <img src={post.user.avatar_url} alt={post.user.full_name} style={styles.avatarImage} />
+                  {post?.user?.avatar_url ? (
+                    <img src={post.user.avatar_url} alt={post.user.full_name || 'User'} style={styles.avatarImage} />
                   ) : (
                     <span style={styles.avatarPlaceholder}>👤</span>
                   )}
                 </div>
                 <div style={styles.postInfo}>
-                  <h4 style={styles.authorName}>{post.user?.full_name || 'Unknown User'}</h4>
+                  <h4 style={styles.authorName}>{post?.user?.full_name || 'Unknown User'}</h4>
                   <span style={styles.postTime}>
-                    {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently'}
+                    {post?.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently'}
                   </span>
                 </div>
               </div>
               
-              <p style={styles.postContent}>{post.content}</p>
+              <p style={styles.postContent}>{post?.content || ''}</p>
               
-              {post.image_url && (
+              {post?.image_url && (
                 <img src={post.image_url} alt="Post" style={styles.postImage} />
               )}
               
               <div style={styles.postFooter}>
                 <button
-                  onClick={() => handleLikePost(post.id)}
+                  onClick={() => handleLikePost && handleLikePost(post.id)}
                   style={{
                     ...styles.likeButton,
-                    ...(post.liked ? styles.liked : {})
+                    ...(post?.liked ? styles.liked : {})
                   }}
                 >
-                  ❤️ {post.likes || 0}
+                  ❤️ {post?.likes || 0}
                 </button>
                 <button style={styles.commentButton}>
-                  💬 {post.comments || 0}
+                  💬 {post?.comments || 0}
                 </button>
               </div>
             </div>
