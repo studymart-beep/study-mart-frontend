@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import CourseView from '../components/CourseView';
-import YouTubePlayer from '../components/YouTubePlayer';
 
 export default function LearningSection() {
   const { user } = useAuth();
@@ -26,7 +25,7 @@ export default function LearningSection() {
     try {
       const response = await api.get('/courses');
       if (response.data.success) {
-        setCourses(response.data.courses);
+        setCourses(response.data.courses || []);
         
         // Extract unique categories
         const uniqueCategories = [...new Set(response.data.courses.map(c => c.category))];
@@ -34,6 +33,7 @@ export default function LearningSection() {
       }
     } catch (error) {
       console.error('Error fetching courses:', error);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -43,10 +43,12 @@ export default function LearningSection() {
     try {
       const response = await api.get('/courses/my-enrollments');
       if (response.data.success) {
-        setEnrolledCourses(response.data.enrollments.map(e => e.course_id));
+        const enrollments = response.data.enrollments || [];
+        setEnrolledCourses(enrollments.map(e => e.course_id));
       }
     } catch (error) {
       console.error('Error fetching enrollments:', error);
+      setEnrolledCourses([]);
     }
   };
 
@@ -54,7 +56,7 @@ export default function LearningSection() {
     try {
       const response = await api.post(`/courses/${courseId}/enroll`);
       if (response.data.success) {
-        setEnrolledCourses([...enrolledCourses, courseId]);
+        setEnrolledCourses(prev => [...prev, courseId]);
         return true;
       }
     } catch (error) {
@@ -69,6 +71,8 @@ export default function LearningSection() {
   };
 
   const extractVideoId = (url) => {
+    if (!url) return null;
+    
     if (url.includes('youtube.com/embed/')) {
       return url.split('/embed/')[1].split('?')[0];
     }
@@ -76,7 +80,11 @@ export default function LearningSection() {
       return url.split('youtu.be/')[1].split('?')[0];
     }
     if (url.includes('v=')) {
-      return new URL(url).searchParams.get('v');
+      try {
+        return new URL(url).searchParams.get('v');
+      } catch (e) {
+        return null;
+      }
     }
     return url;
   };
@@ -124,10 +132,14 @@ export default function LearningSection() {
         <div style={styles.loadingContainer}>
           <div style={styles.loader}></div>
         </div>
+      ) : filteredCourses.length === 0 ? (
+        <div style={styles.emptyState}>
+          <p>No courses available yet.</p>
+        </div>
       ) : (
         <div style={styles.coursesGrid}>
           {filteredCourses.map(course => {
-            const isEnrolled = enrolledCourses.includes(course.id);
+            const isEnrolled = enrolledCourses && enrolledCourses.includes(course.id);
             const videoId = extractVideoId(course.youtube_url);
             
             return (
@@ -137,11 +149,20 @@ export default function LearningSection() {
                 onClick={() => handleCourseClick(course)}
               >
                 <div style={styles.thumbnailContainer}>
-                  <img 
-                    src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
-                    alt={course.title}
-                    style={styles.thumbnail}
-                  />
+                  {videoId ? (
+                    <img 
+                      src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
+                      alt={course.title}
+                      style={styles.thumbnail}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/320x180?text=Course+Video';
+                      }}
+                    />
+                  ) : (
+                    <div style={styles.placeholderThumbnail}>
+                      <span>📹</span>
+                    </div>
+                  )}
                   <div style={styles.playOverlay}>
                     <span style={styles.playIcon}>▶</span>
                   </div>
@@ -157,8 +178,8 @@ export default function LearningSection() {
                   
                   <div style={styles.courseFooter}>
                     <div style={styles.courseMeta}>
-                      <span>📊 {course.level}</span>
-                      <span>⏱️ {course.duration}</span>
+                      <span>📊 {course.level || 'All levels'}</span>
+                      <span>⏱️ {course.duration || 'Self-paced'}</span>
                     </div>
                     <button 
                       style={isEnrolled ? styles.watchButton : styles.enrollButton}
@@ -183,7 +204,7 @@ export default function LearningSection() {
           course={selectedCourse}
           onClose={() => setShowCourseView(false)}
           onEnroll={handleEnroll}
-          isEnrolled={enrolledCourses.includes(selectedCourse.id)}
+          isEnrolled={enrolledCourses && enrolledCourses.includes(selectedCourse.id)}
         />
       )}
     </div>
@@ -247,12 +268,23 @@ const styles = {
   thumbnailContainer: {
     position: 'relative',
     height: '180px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    backgroundColor: '#f1f5f9'
   },
   thumbnail: {
     width: '100%',
     height: '100%',
     objectFit: 'cover'
+  },
+  placeholderThumbnail: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '48px',
+    backgroundColor: '#e2e8f0',
+    color: '#94a3b8'
   },
   playOverlay: {
     position: 'absolute',
@@ -350,5 +382,13 @@ const styles = {
     width: '40px',
     height: '40px',
     animation: 'spin 1s linear infinite'
+  },
+  emptyState: {
+    textAlign: 'center',
+    padding: '50px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    color: '#64748b',
+    fontSize: '16px'
   }
 };
