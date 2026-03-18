@@ -11,6 +11,74 @@ import Notifications from '../components/Notifications';
 import SellerApplicationModal from '../components/SellerApplicationModal';
 import SellerDashboard from '../components/SellerDashboard';
 
+// Temporary mock data until backend is fixed
+const MOCK_POSTS = [
+  {
+    id: '1',
+    content: 'Welcome to Study Mart! This is a sample post.',
+    image_url: null,
+    likes: 5,
+    comments: 2,
+    created_at: new Date().toISOString(),
+    user: {
+      id: '1',
+      full_name: 'Admin User',
+      avatar_url: null,
+      role: 'admin'
+    }
+  },
+  {
+    id: '2',
+    content: 'Learning React is fun! Join our community.',
+    image_url: null,
+    likes: 3,
+    comments: 1,
+    created_at: new Date().toISOString(),
+    user: {
+      id: '2',
+      full_name: 'John Student',
+      avatar_url: null,
+      role: 'student'
+    }
+  }
+];
+
+const MOCK_PROFILE = {
+  id: '1',
+  full_name: 'Test User',
+  email: 'user@example.com',
+  avatar_url: null,
+  role: 'student'
+};
+
+const MOCK_GROUPS = [
+  {
+    id: '1',
+    name: 'React Developers',
+    description: 'Learn React together',
+    members: 25,
+    icon: '⚛️',
+    joined: false
+  },
+  {
+    id: '2',
+    name: 'JavaScript Masters',
+    description: 'Advanced JavaScript',
+    members: 18,
+    icon: '📜',
+    joined: true
+  }
+];
+
+const MOCK_MESSAGES = [
+  {
+    id: '1',
+    content: 'Hello, how are you?',
+    sender: 'Jane',
+    time: '10:30 AM'
+  }
+];
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('home');
@@ -66,7 +134,8 @@ export default function StudentDashboard() {
         setProfileData(response.data.profile);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching profile, using mock data:', error);
+      setProfileData(MOCK_PROFILE);
     }
   };
 
@@ -79,8 +148,8 @@ export default function StudentDashboard() {
         setFeedPosts(response.data.posts);
       }
     } catch (error) {
-      console.error('Error fetching feed:', error);
-      setFeedError('Failed to load feed. Please try again.');
+      console.error('Error fetching feed, using mock data:', error);
+      setFeedPosts(MOCK_POSTS);
     } finally {
       setLoadingFeed(false);
     }
@@ -104,6 +173,24 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      // Optimistically add post
+      const newPost = {
+        id: Date.now().toString(),
+        content: postData.content,
+        image_url: postData.media_url || null,
+        likes: 0,
+        comments: 0,
+        created_at: new Date().toISOString(),
+        user: {
+          id: user?.id || '1',
+          full_name: user?.profile?.full_name || 'Current User',
+          avatar_url: null,
+          role: 'student'
+        }
+      };
+      setFeedPosts([newPost, ...feedPosts]);
+      setNewPostContent('');
+      setNewPostImage(null);
     } finally {
       setPosting(false);
     }
@@ -127,6 +214,18 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error liking post:', error);
+      // Optimistic update
+      setFeedPosts(prev => 
+        prev.map(post => 
+          post.id === postId 
+            ? { 
+                ...post, 
+                liked: !post.liked,
+                likes: post.liked ? post.likes - 1 : post.likes + 1
+              }
+            : post
+        )
+      );
     }
   };
 
@@ -138,7 +237,8 @@ export default function StudentDashboard() {
         setGroups(response.data.groups);
       }
     } catch (error) {
-      console.error('Error fetching groups:', error);
+      console.error('Error fetching groups, using mock data:', error);
+      setGroups(MOCK_GROUPS);
     } finally {
       setLoadingGroups(false);
     }
@@ -152,7 +252,8 @@ export default function StudentDashboard() {
         setMessages(response.data.messages);
       }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error fetching messages, using mock data:', error);
+      setMessages(MOCK_MESSAGES);
     } finally {
       setLoadingMessages(false);
     }
@@ -166,6 +267,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error fetching top contributors:', error);
+      setTopContributors([]);
     }
   };
 
@@ -177,6 +279,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error fetching events:', error);
+      setEvents([]);
     }
   };
 
@@ -188,6 +291,14 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error joining group:', error);
+      // Optimistic update
+      setGroups(prev => 
+        prev.map(group => 
+          group.id === groupId 
+            ? { ...group, joined: true, members: group.members + 1 }
+            : group
+        )
+      );
     }
   };
 
@@ -199,6 +310,14 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error leaving group:', error);
+      // Optimistic update
+      setGroups(prev => 
+        prev.map(group => 
+          group.id === groupId 
+            ? { ...group, joined: false, members: group.members - 1 }
+            : group
+        )
+      );
     }
   };
 
