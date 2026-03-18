@@ -86,6 +86,7 @@ export default function StudentDashboard() {
     }
   };
 
+  // FIXED: Now accepts data object instead of event
   const handleCreatePost = async (postData) => {
     setPosting(true);
     try {

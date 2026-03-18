@@ -4,7 +4,6 @@ import api from '../services/api';
 import PeopleSection from './PeopleSection';
 import ChatWindow from '../components/ChatWindow';
 import CommunityProfile from '../components/CommunityProfile';
-import { uploadMedia, subscribeToPosts, subscribeToLikes, subscribeToComments, toggleLike, addComment } from '../services/postService';
 
 export default function CommunitySection({ 
   feedPosts,
@@ -44,19 +43,12 @@ export default function CommunitySection({
   const [unreadCount, setUnreadCount] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
-  
   const [mediaFile, setMediaFile] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
   const [mediaType, setMediaType] = useState('text');
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState('');
-  const [postComments, setPostComments] = useState({});
-  const [localPosts, setLocalPosts] = useState([]);
-  const [realTimeEnabled, setRealTimeEnabled] = useState(false);
   const [localPosting, setLocalPosting] = useState(false);
 
+  // Modern realistic tabs with glass morphism
   const tabs = [
     { 
       id: 'home', 
@@ -102,31 +94,6 @@ export default function CommunitySection({
     }
   }, [communityTab]);
 
-  useEffect(() => {
-    if (feedPosts && feedPosts.length > 0) {
-      setLocalPosts(feedPosts);
-    }
-  }, [feedPosts]);
-
-  useEffect(() => {
-    if (!realTimeEnabled && user) {
-      setupRealTimeSubscriptions();
-      setRealTimeEnabled(true);
-    }
-  }, [user]);
-
-  const setupRealTimeSubscriptions = () => {
-    const postSubscription = subscribeToPosts((newPost) => {
-      if (newPost) {
-        setLocalPosts(prev => [newPost, ...prev]);
-      }
-    });
-
-    return () => {
-      if (postSubscription) postSubscription.unsubscribe();
-    };
-  };
-
   const fetchConversations = async () => {
     setLoadingConversations(true);
     try {
@@ -170,17 +137,14 @@ export default function CommunitySection({
   const handleMediaSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     setMediaFile(file);
     setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
-    
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setMediaPreview(reader.result);
-    };
+    reader.onloadend = () => setMediaPreview(reader.result);
     reader.readAsDataURL(file);
   };
 
+  // FIXED: Now calls handleCreatePost with data object
   const handleCreatePostWithMedia = async () => {
     if (!newPostContent.trim() && !mediaFile) return;
     if (localPosting) return;
@@ -192,31 +156,20 @@ export default function CommunitySection({
       let finalMediaType = 'text';
       
       if (mediaFile) {
-        setUploadProgress(10);
-        const uploadResult = await uploadMedia(mediaFile, mediaType);
-        setUploadProgress(100);
-        
-        if (uploadResult.success) {
-          mediaUrl = uploadResult.url;
-          finalMediaType = mediaType;
-        }
+        mediaUrl = URL.createObjectURL(mediaFile);
+        finalMediaType = mediaType;
       }
       
-      const postData = {
+      await handleCreatePost({
         content: newPostContent,
         media_url: mediaUrl,
         media_type: finalMediaType
-      };
-      
-      if (handleCreatePost) {
-        await handleCreatePost(postData);
-      }
+      });
       
       setNewPostContent('');
       setMediaFile(null);
       setMediaPreview(null);
       setMediaType('text');
-      setUploadProgress(0);
       
     } catch (error) {
       console.error('Error creating post:', error);
@@ -225,69 +178,16 @@ export default function CommunitySection({
     }
   };
 
-  const handleLikeWithRealTime = async (postId) => {
-    try {
-      const result = await toggleLike(postId);
-      if (result && result.success) {
-        setLocalPosts(prev => 
-          prev.map(p => 
-            p.id === postId 
-              ? { 
-                  ...p, 
-                  liked: !p.liked,
-                  likes: p.liked ? (p.likes - 1) : (p.likes + 1)
-                }
-              : p
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
-  };
-
-  const handleShowComments = async (post) => {
-    setSelectedPost(post);
-    setShowComments(true);
-    await fetchComments(post.id);
-  };
-
-  const fetchComments = async (postId) => {
-    try {
-      const response = await api.get(`/posts/${postId}/comments`);
-      if (response.data.success) {
-        setPostComments(prev => ({
-          ...prev,
-          [postId]: response.data.comments
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-    }
-  };
-
-  const handleAddComment = async (postId) => {
-    if (!commentText.trim()) return;
-    
-    try {
-      const result = await addComment(postId, commentText);
-      if (result && result.success) {
-        setCommentText('');
-        await fetchComments(postId);
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    }
-  };
-
   return (
     <div style={styles.container}>
+      {/* Welcome Header - Premium Gradient */}
       <div style={styles.welcomeHeader}>
         <h1 style={styles.welcomeTitle}>Welcome to Study Mart Community</h1>
         <p style={styles.welcomeSubtitle}>Connect, Learn, Grow Together</p>
         <div style={styles.headerGlow}></div>
       </div>
 
+      {/* Premium Glass-Morphism Tab Bar */}
       <div style={styles.tabBar}>
         {tabs.map(tab => (
           <button
@@ -317,13 +217,16 @@ export default function CommunitySection({
         ))}
       </div>
 
+      {/* Tab Content */}
       <div style={styles.content}>
+        {/* HOME TAB - Feed */}
         {communityTab === 'home' && (
           <div style={styles.feedContainer}>
             <div style={styles.feedHeader}>
               <h2 style={styles.sectionTitle}>🏠 Home Feed</h2>
             </div>
 
+            {/* Create Post Card */}
             <div style={styles.createPostCard}>
               <textarea
                 placeholder="What's on your mind?"
@@ -350,12 +253,6 @@ export default function CommunitySection({
                   >
                     ✕
                   </button>
-                </div>
-              )}
-
-              {uploadProgress > 0 && uploadProgress < 100 && (
-                <div style={styles.progressBar}>
-                  <div style={{...styles.progressFill, width: `${uploadProgress}%`}} />
                 </div>
               )}
 
@@ -388,14 +285,19 @@ export default function CommunitySection({
               </div>
             </div>
 
-            {feedError ? (
+            {/* Feed Posts */}
+            {loadingFeed ? (
+              <div style={styles.loadingContainer}>
+                <div style={styles.loader}></div>
+              </div>
+            ) : feedError ? (
               <div style={styles.errorMessage}>{feedError}</div>
-            ) : localPosts.length === 0 ? (
+            ) : !feedPosts || feedPosts.length === 0 ? (
               <div style={styles.emptyState}>
                 <p>No posts yet. Be the first to post!</p>
               </div>
             ) : (
-              localPosts.map(post => (
+              feedPosts.map(post => (
                 <div key={post.id} style={styles.postCard}>
                   <div style={styles.postHeader} onClick={() => handleViewUserProfile(post.user_id)}>
                     <div style={styles.avatar}>
@@ -419,92 +321,30 @@ export default function CommunitySection({
                   <p style={styles.postContent}>{post.content}</p>
                   
                   {post.image_url && (
-                    <img 
-                      src={post.image_url} 
-                      alt="post" 
-                      style={styles.postImage}
-                      onClick={() => window.open(post.image_url, '_blank')}
-                    />
+                    <img src={post.image_url} alt="post" style={styles.postImage} />
                   )}
-                  
-                  {post.video_url && (
-                    <video 
-                      src={post.video_url} 
-                      controls 
-                      style={styles.postVideo}
-                    />
-                  )}
-                  
-                  <div style={styles.postStats}>
-                    <span>❤️ {post.likes || 0} likes</span>
-                    <span>💬 {post.comments || 0} comments</span>
-                  </div>
                   
                   <div style={styles.postFooter}>
                     <button
-                      onClick={() => handleLikeWithRealTime(post.id)}
+                      onClick={() => handleLikePost(post.id)}
                       style={{
                         ...styles.likeButton,
                         ...(post.liked ? styles.liked : {})
                       }}
                     >
-                      ❤️ {post.liked ? 'Liked' : 'Like'}
+                      ❤️ {post.likes || 0}
                     </button>
-                    <button
-                      onClick={() => handleShowComments(post)}
-                      style={styles.commentButton}
-                    >
-                      💬 Comment
-                    </button>
+                    <span style={styles.commentCount}>
+                      💬 {post.comments || 0}
+                    </span>
                   </div>
-                  
-                  {selectedPost?.id === post.id && showComments && (
-                    <div style={styles.commentsSection}>
-                      {postComments[post.id]?.map(comment => (
-                        <div key={comment.id} style={styles.comment}>
-                          <img 
-                            src={comment.user?.avatar_url || '/default-avatar.png'} 
-                            alt={comment.user?.full_name}
-                            style={styles.commentAvatar}
-                          />
-                          <div style={styles.commentContent}>
-                            <strong>{comment.user?.full_name}</strong>
-                            <p>{comment.content}</p>
-                            <span style={styles.commentTime}>
-                              {new Date(comment.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      <div style={styles.addComment}>
-                        <input
-                          type="text"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          placeholder="Write a comment..."
-                          style={styles.commentInput}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleAddComment(post.id);
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleAddComment(post.id)}
-                          style={styles.commentSubmit}
-                        >
-                          Post
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))
             )}
           </div>
         )}
 
+        {/* CHANNEL TAB */}
         {communityTab === 'channel' && (
           <div style={styles.channelContainer}>
             <div style={styles.channelHeader}>
@@ -560,6 +400,7 @@ export default function CommunitySection({
           </div>
         )}
 
+        {/* REELS TAB */}
         {communityTab === 'reels' && (
           <div style={styles.reelsContainer}>
             <h2 style={styles.sectionTitle}>🎬 Reels</h2>
@@ -577,6 +418,7 @@ export default function CommunitySection({
           </div>
         )}
 
+        {/* PEOPLE TAB */}
         {communityTab === 'people' && (
           <PeopleSection 
             currentUser={user}
@@ -585,6 +427,7 @@ export default function CommunitySection({
           />
         )}
 
+        {/* CHAT TAB */}
         {communityTab === 'chat' && (
           <div style={styles.chatContainer}>
             <h2 style={styles.sectionTitle}>💬 Messages</h2>
@@ -634,6 +477,7 @@ export default function CommunitySection({
         )}
       </div>
 
+      {/* Chat Window */}
       {showChat && selectedChatUser && (
         <ChatWindow
           user={selectedChatUser}
@@ -647,6 +491,7 @@ export default function CommunitySection({
         />
       )}
 
+      {/* Profile Modal */}
       {showProfileModal && selectedProfileUserId && (
         <CommunityProfile
           userId={selectedProfileUserId}
@@ -829,19 +674,6 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressBar: {
-    width: '100%',
-    height: '4px',
-    backgroundColor: '#e2e8f0',
-    borderRadius: '2px',
-    marginBottom: '15px',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#667eea',
-    transition: 'width 0.3s ease',
-  },
   postActions: {
     display: 'flex',
     alignItems: 'center',
@@ -865,10 +697,7 @@ const styles = {
   fileName: {
     fontSize: '13px',
     color: '#64748b',
-    maxWidth: '200px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    flex: 1,
   },
   postButton: {
     padding: '10px 28px',
@@ -953,41 +782,23 @@ const styles = {
     borderRadius: '12px',
     marginBottom: '15px',
     boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
-    cursor: 'pointer',
-  },
-  postVideo: {
-    width: '100%',
-    maxHeight: '450px',
-    borderRadius: '12px',
-    marginBottom: '15px',
-    backgroundColor: '#000',
-  },
-  postStats: {
-    display: 'flex',
-    gap: '20px',
-    padding: '10px 0',
-    borderTop: '1px solid #e2e8f0',
-    borderBottom: '1px solid #e2e8f0',
-    marginBottom: '10px',
-    fontSize: '14px',
-    color: '#64748b',
   },
   postFooter: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '20px',
+    paddingTop: '15px',
+    borderTop: '1px solid #e2e8f0',
   },
   likeButton: {
-    flex: 1,
     padding: '8px 16px',
     backgroundColor: '#f1f5f9',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '25px',
     fontSize: '14px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: '6px',
     transition: 'all 0.2s ease',
   },
@@ -995,69 +806,12 @@ const styles = {
     backgroundColor: '#fee2e2',
     color: '#ef4444',
   },
-  commentButton: {
-    flex: 1,
-    padding: '8px 16px',
-    backgroundColor: '#f1f5f9',
-    border: 'none',
-    borderRadius: '8px',
+  commentCount: {
     fontSize: '14px',
-    cursor: 'pointer',
+    color: '#64748b',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    transition: 'all 0.2s ease',
-  },
-  commentsSection: {
-    marginTop: '15px',
-    paddingTop: '15px',
-    borderTop: '1px solid #e2e8f0',
-  },
-  comment: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '12px',
-  },
-  commentAvatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '16px',
-    objectFit: 'cover',
-  },
-  commentContent: {
-    flex: 1,
-    backgroundColor: '#f1f5f9',
-    padding: '8px 12px',
-    borderRadius: '12px',
-    fontSize: '14px',
-  },
-  commentTime: {
-    fontSize: '11px',
-    color: '#94a3b8',
-    display: 'block',
-    marginTop: '4px',
-  },
-  addComment: {
-    display: 'flex',
-    gap: '10px',
-    marginTop: '15px',
-  },
-  commentInput: {
-    flex: 1,
-    padding: '8px 12px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '20px',
-    fontSize: '14px',
-  },
-  commentSubmit: {
-    padding: '8px 16px',
-    backgroundColor: '#6366f1',
-    color: 'white',
-    border: 'none',
-    borderRadius: '20px',
-    fontSize: '14px',
-    cursor: 'pointer',
+    gap: '4px',
   },
   channelContainer: {
     width: '100%',
@@ -1277,6 +1031,7 @@ const styles = {
   },
 };
 
+// Global animations
 const globalStyles = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -1285,16 +1040,6 @@ const globalStyles = `
   @keyframes float {
     0%, 100% { transform: translate(0, 0); }
     50% { transform: translate(20px, -20px); }
-  }
-  @keyframes slideUp {
-    from {
-      transform: translateY(50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
   }
 `;
 
