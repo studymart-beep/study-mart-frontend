@@ -7,7 +7,6 @@ import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';
 import StudentDashboard from './pages/studentdashboard';
-import AdminDashboard from './pages/admindashboard';
 import PaymentVerify from './pages/paymentverify';
 import SellerApplicationCallback from './pages/sellerapplicationcallback';
 
@@ -25,22 +24,15 @@ function AppContent() {
     );
   }
 
+  // If user is logged in, show student dashboard only
   if (user) {
-    const userRole = user.profile?.role || 'student';
-    
-    if (userRole === 'admin') {
-      return (
-        <Router>
-          <Routes>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/payment/verify" element={<PaymentVerify />} />
-            <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Routes>
-        </Router>
-      );
+    // Redirect admins to separate admin site
+    if (user.profile?.role === 'admin') {
+      window.location.href = 'https://studymart-admin.vercel.app';
+      return null;
     }
 
+    // Student user - show student dashboard
     return (
       <Router>
         <Routes>
@@ -53,6 +45,7 @@ function AppContent() {
     );
   }
 
+  // User is NOT logged in - show guest page
   return (
     <Router>
       <Routes>
