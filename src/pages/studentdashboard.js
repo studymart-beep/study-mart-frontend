@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import HomeSection from './HomeSection';
 import LearningSection from './LearningSection';
 
+// Temporary mock data until backend is fixed
 const MOCK_POSTS = [
   {
     id: '1',
@@ -51,6 +52,7 @@ export default function StudentDashboard() {
   const [profileData, setProfileData] = useState({});
   const [showNotifications, setShowNotifications] = useState(false);
   
+  // Feed state
   const [feedPosts, setFeedPosts] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [feedError, setFeedError] = useState(null);
@@ -58,6 +60,7 @@ export default function StudentDashboard() {
   const [newPostImage, setNewPostImage] = useState(null);
   const [posting, setPosting] = useState(false);
 
+  // Button interaction states
   const [hoveredButton, setHoveredButton] = useState(null);
   const [pressedButton, setPressedButton] = useState(null);
 
@@ -115,6 +118,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      // Optimistically add post
       const newPost = {
         id: Date.now().toString(),
         content: postData.content,
@@ -155,6 +159,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error liking post:', error);
+      // Optimistic update
       setFeedPosts(prev => 
         prev.map(post => 
           post.id === postId 
