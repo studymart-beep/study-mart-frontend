@@ -6,8 +6,6 @@ export default function Navbar({
   setActiveSection, 
   setShowProfile, 
   profileData,
-  showNotifications,
-  toggleNotifications,
   hoveredButton,
   pressedButton,
   handleButtonMouseEnter,
@@ -17,34 +15,19 @@ export default function Navbar({
 }) {
   const { user, signOut } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [theme, setTheme] = useState('light');
 
-  const handleLogout = () => {
-    signOut();
-  };
-
-  const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      alert('Account deletion requested');
-    }
-  };
-
-  const handleThemeChange = () => {
-    const themes = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(theme);
-    const nextTheme = themes[(currentIndex + 1) % themes.length];
-    setTheme(nextTheme);
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    alert(`Theme changed to ${nextTheme} mode`);
-  };
+  const handleLogout = () => signOut();
 
   return (
     <nav style={styles.navbar}>
       <div style={styles.navContainer}>
+        {/* Logo */}
         <div style={styles.logoContainer}>
+          <img src="/logo.png" alt="Study Mart" style={styles.logoImage} />
           <span style={styles.logoText}>Study Mart</span>
         </div>
         
+        {/* Navigation Buttons */}
         <div style={styles.navButtons}>
           <button 
             style={{
@@ -78,19 +61,12 @@ export default function Navbar({
           </button>
         </div>
 
+        {/* Profile */}
         <div style={styles.rightSection}>
           <div style={styles.profileContainer}>
             <button 
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              style={{
-                ...styles.profileButton,
-                ...(hoveredButton === 'profile' ? styles.profileButtonHover : {}),
-                ...(pressedButton === 'profile' ? styles.profileButtonPressed : {})
-              }}
-              onMouseEnter={() => handleButtonMouseEnter('profile')}
-              onMouseLeave={handleButtonMouseLeave}
-              onMouseDown={() => handleButtonMouseDown('profile')}
-              onMouseUp={handleButtonMouseUp}
+              style={styles.profileButton}
             >
               <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
               <div style={styles.avatarSmall}>
@@ -104,39 +80,11 @@ export default function Navbar({
 
             {showProfileMenu && (
               <div style={styles.dropdownMenu}>
-                <button 
-                  onClick={() => {
-                    setShowProfile(true);
-                    setShowProfileMenu(false);
-                  }}
-                  style={styles.menuItem}
-                >
-                  <span style={styles.menuIcon}>⚙️</span>
-                  Settings
+                <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={styles.menuItem}>
+                  <span style={styles.menuIcon}>⚙️</span> Settings
                 </button>
-                
-                <button 
-                  onClick={handleThemeChange}
-                  style={styles.menuItem}
-                >
-                  <span style={styles.menuIcon}>🎨</span>
-                  Theme ({theme})
-                </button>
-                
-                <button 
-                  onClick={handleLogout}
-                  style={styles.menuItem}
-                >
-                  <span style={styles.menuIcon}>🚪</span>
-                  Logout
-                </button>
-
-                <button 
-                  onClick={handleDeleteAccount}
-                  style={{...styles.menuItem, ...styles.deleteItem}}
-                >
-                  <span style={styles.menuIcon}>🗑️</span>
-                  Delete Account
+                <button onClick={handleLogout} style={styles.menuItem}>
+                  <span style={styles.menuIcon}>🚪</span> Logout
                 </button>
               </div>
             )}
@@ -151,11 +99,9 @@ const styles = {
   navbar: {
     background: 'linear-gradient(90deg, #6366f1 0%, #2563EB 100%)',
     padding: '0.8rem 0',
-    boxShadow: '0 4px 20px rgba(37, 99, 235, 0.3)',
     position: 'sticky',
     top: 0,
     zIndex: 100,
-    backdropFilter: 'blur(10px)',
   },
   navContainer: {
     maxWidth: '1400px',
@@ -164,58 +110,54 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    flexWrap: 'wrap',
   },
   logoContainer: {
-    background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    background: 'rgba(255,255,255,0.1)',
+    padding: '5px 16px',
+    borderRadius: '40px',
+  },
+  logoImage: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    objectFit: 'cover',
   },
   logoText: {
     color: 'white',
     fontSize: '20px',
     fontWeight: 'bold',
-    letterSpacing: '0.5px',
   },
   navButtons: {
     display: 'flex',
     gap: '8px',
-    flexWrap: 'wrap',
   },
   navButton: {
     padding: '10px 20px',
-    background: 'rgba(255, 255, 255, 0.1)',
+    background: 'rgba(255,255,255,0.1)',
     color: 'white',
     border: 'none',
     borderRadius: '12px',
     fontSize: '15px',
     fontWeight: '500',
     cursor: 'pointer',
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    backdropFilter: 'blur(5px)',
-    letterSpacing: '0.3px',
+    transition: 'all 0.2s ease',
   },
   navButtonHover: {
-    background: 'rgba(255, 255, 255, 0.25)',
+    background: 'rgba(255,255,255,0.25)',
     transform: 'translateY(-2px)',
-    boxShadow: '0 8px 20px rgba(255, 107, 53, 0.3)',
   },
   navButtonPressed: {
     transform: 'translateY(2px) scale(0.98)',
-    background: 'rgba(46, 204, 113, 0.4)',
-    boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)',
   },
   navButtonActive: {
     background: 'linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%)',
-    color: 'white',
-    boxShadow: '0 4px 12px rgba(255, 107, 53, 0.4)',
   },
   rightSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '15px',
   },
   profileContainer: {
     position: 'relative',
@@ -224,21 +166,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    background: 'rgba(255, 255, 255, 0.15)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
+    background: 'rgba(255,255,255,0.15)',
     borderRadius: '40px',
     padding: '5px 20px 5px 5px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    backdropFilter: 'blur(5px)',
-  },
-  profileButtonHover: {
-    background: 'rgba(46, 204, 113, 0.3)',
-    borderColor: '#2ECC71',
-    transform: 'scale(1.02)',
-  },
-  profileButtonPressed: {
-    transform: 'scale(0.98)',
   },
   userName: {
     color: 'white',
@@ -255,7 +186,6 @@ const styles = {
     justifyContent: 'center',
     fontSize: '18px',
     overflow: 'hidden',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
   },
   avatarSmallImage: {
     width: '100%',
@@ -266,18 +196,16 @@ const styles = {
     position: 'absolute',
     top: '50px',
     right: 0,
-    width: '220px',
-    backgroundColor: '#ffffff',
+    width: '200px',
+    backgroundColor: 'white',
     borderRadius: '12px',
     boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
     padding: '8px',
     zIndex: 1000,
-    border: '1px solid rgba(0,0,0,0.05)',
   },
   menuItem: {
     width: '100%',
     padding: '12px 16px',
-    backgroundColor: 'transparent',
     border: 'none',
     borderRadius: '8px',
     fontSize: '14px',
@@ -289,23 +217,9 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     transition: 'all 0.2s ease',
-    ':hover': {
-      backgroundColor: '#f1f5f9',
-      transform: 'translateX(5px)',
-    },
   },
   menuIcon: {
     fontSize: '18px',
     width: '24px',
-    textAlign: 'center',
-  },
-  deleteItem: {
-    color: '#ef4444',
-    borderTop: '1px solid #e2e8f0',
-    marginTop: '4px',
-    paddingTop: '12px',
-    ':hover': {
-      backgroundColor: '#fee2e2',
-    },
   },
 };
