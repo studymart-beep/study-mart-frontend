@@ -17,7 +17,7 @@ export default function Navbar({
 }) {
   const { user, signOut } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [theme, setTheme] = useState('light'); // light, dark, system
+  const [theme, setTheme] = useState('light');
 
   const handleLogout = () => {
     signOut();
@@ -25,19 +25,15 @@ export default function Navbar({
 
   const handleDeleteAccount = () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      // Add delete account logic here
       alert('Account deletion requested');
     }
   };
 
   const handleThemeChange = () => {
-    // Cycle through themes: light → dark → system
     const themes = ['light', 'dark', 'system'];
     const currentIndex = themes.indexOf(theme);
     const nextTheme = themes[(currentIndex + 1) % themes.length];
     setTheme(nextTheme);
-    
-    // Apply theme to document
     document.documentElement.setAttribute('data-theme', nextTheme);
     alert(`Theme changed to ${nextTheme} mode`);
   };
@@ -80,55 +76,9 @@ export default function Navbar({
           >
             Learning
           </button>
-          <button 
-            style={{
-              ...styles.navButton,
-              ...(activeSection === 'marketplace' ? styles.navButtonActive : {}),
-              ...(hoveredButton === 'nav-marketplace' ? styles.navButtonHover : {}),
-              ...(pressedButton === 'nav-marketplace' ? styles.navButtonPressed : {})
-            }}
-            onClick={() => setActiveSection('marketplace')}
-            onMouseEnter={() => handleButtonMouseEnter('nav-marketplace')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('nav-marketplace')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            Marketplace
-          </button>
-          <button 
-            style={{
-              ...styles.navButton,
-              ...(activeSection === 'community' ? styles.navButtonActive : {}),
-              ...(hoveredButton === 'nav-community' ? styles.navButtonHover : {}),
-              ...(pressedButton === 'nav-community' ? styles.navButtonPressed : {})
-            }}
-            onClick={() => setActiveSection('community')}
-            onMouseEnter={() => handleButtonMouseEnter('nav-community')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('nav-community')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            Community
-          </button>
         </div>
 
         <div style={styles.rightSection}>
-          <button 
-            onClick={toggleNotifications}
-            style={{
-              ...styles.notificationButton,
-              ...(hoveredButton === 'notifications' ? styles.notificationButtonHover : {}),
-              ...(pressedButton === 'notifications' ? styles.notificationButtonPressed : {})
-            }}
-            onMouseEnter={() => handleButtonMouseEnter('notifications')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('notifications')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            🔔
-          </button>
-
-          {/* Profile Avatar with Dropdown */}
           <div style={styles.profileContainer}>
             <button 
               onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -152,7 +102,6 @@ export default function Navbar({
               </div>
             </button>
 
-            {/* Profile Dropdown Menu with 3 Buttons */}
             {showProfileMenu && (
               <div style={styles.dropdownMenu}>
                 <button 
@@ -268,28 +217,6 @@ const styles = {
     alignItems: 'center',
     gap: '15px',
   },
-  notificationButton: {
-    background: 'rgba(255,255,255,0.15)',
-    border: 'none',
-    borderRadius: '50%',
-    width: '42px',
-    height: '42px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    fontSize: '20px',
-    transition: 'all 0.2s ease',
-  },
-  notificationButtonHover: {
-    background: 'rgba(255,255,255,0.25)',
-    transform: 'scale(1.1)',
-  },
-  notificationButtonPressed: {
-    transform: 'scale(0.95)',
-  },
-  
-  // Profile Container
   profileContainer: {
     position: 'relative',
   },
@@ -317,9 +244,6 @@ const styles = {
     color: 'white',
     fontSize: '14px',
     fontWeight: '500',
-    '@media (max-width: 768px)': {
-      display: 'none',
-    },
   },
   avatarSmall: {
     width: '36px',
@@ -338,8 +262,6 @@ const styles = {
     height: '100%',
     objectFit: 'cover',
   },
-
-  // Dropdown Menu - 3 Buttons Design
   dropdownMenu: {
     position: 'absolute',
     top: '50px',

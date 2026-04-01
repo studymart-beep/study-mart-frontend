@@ -4,14 +4,7 @@ import api from '../services/api';
 import Navbar from '../components/Navbar';
 import HomeSection from './HomeSection';
 import LearningSection from './LearningSection';
-import MarketplaceSection from './MarketplaceSection';
-import CommunitySection from './CommunitySection';
-import ChatWindow from '../components/ChatWindow';
-import Notifications from '../components/Notifications';
-import SellerApplicationModal from '../components/SellerApplicationModal';
-import SellerDashboard from '../components/SellerDashboard';
 
-// Temporary mock data until backend is fixed
 const MOCK_POSTS = [
   {
     id: '1',
@@ -51,64 +44,20 @@ const MOCK_PROFILE = {
   role: 'student'
 };
 
-const MOCK_GROUPS = [
-  {
-    id: '1',
-    name: 'React Developers',
-    description: 'Learn React together',
-    members: 25,
-    icon: '⚛️',
-    joined: false
-  },
-  {
-    id: '2',
-    name: 'JavaScript Masters',
-    description: 'Advanced JavaScript',
-    members: 18,
-    icon: '📜',
-    joined: true
-  }
-];
-
-const MOCK_MESSAGES = [
-  {
-    id: '1',
-    content: 'Hello, how are you?',
-    sender: 'Jane',
-    time: '10:30 AM'
-  }
-];
-
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('home');
   const [showProfile, setShowProfile] = useState(false);
   const [profileData, setProfileData] = useState({});
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showSellerModal, setShowSellerModal] = useState(false);
-  const [showSellerDashboard, setShowSellerDashboard] = useState(false);
   
-  // Feed state
   const [feedPosts, setFeedPosts] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [feedError, setFeedError] = useState(null);
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostImage, setNewPostImage] = useState(null);
   const [posting, setPosting] = useState(false);
-  
-  // Groups state
-  const [groups, setGroups] = useState([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
-  
-  // Messages state
-  const [messages, setMessages] = useState([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  
-  // People state
-  const [topContributors, setTopContributors] = useState([]);
-  const [events, setEvents] = useState([]);
 
-  // Button interaction states
   const [hoveredButton, setHoveredButton] = useState(null);
   const [pressedButton, setPressedButton] = useState(null);
 
@@ -117,12 +66,6 @@ export default function StudentDashboard() {
       fetchProfile();
       if (activeSection === 'home') {
         fetchFeed();
-      } else if (activeSection === 'community') {
-        fetchGroups();
-        fetchMessages();
-      } else if (activeSection === 'people') {
-        fetchTopContributors();
-        fetchEvents();
       }
     }
   }, [user, activeSection]);
@@ -155,7 +98,6 @@ export default function StudentDashboard() {
     }
   };
 
-  // FIXED: Now accepts data object instead of event
   const handleCreatePost = async (postData) => {
     setPosting(true);
     try {
@@ -173,7 +115,6 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      // Optimistically add post
       const newPost = {
         id: Date.now().toString(),
         content: postData.content,
@@ -214,7 +155,6 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error liking post:', error);
-      // Optimistic update
       setFeedPosts(prev => 
         prev.map(post => 
           post.id === postId 
@@ -229,118 +169,6 @@ export default function StudentDashboard() {
     }
   };
 
-  const fetchGroups = async () => {
-    setLoadingGroups(true);
-    try {
-      const response = await api.get('/groups');
-      if (response.data.success) {
-        setGroups(response.data.groups);
-      }
-    } catch (error) {
-      console.error('Error fetching groups, using mock data:', error);
-      setGroups(MOCK_GROUPS);
-    } finally {
-      setLoadingGroups(false);
-    }
-  };
-
-  const fetchMessages = async () => {
-    setLoadingMessages(true);
-    try {
-      const response = await api.get('/messages');
-      if (response.data.success) {
-        setMessages(response.data.messages);
-      }
-    } catch (error) {
-      console.error('Error fetching messages, using mock data:', error);
-      setMessages(MOCK_MESSAGES);
-    } finally {
-      setLoadingMessages(false);
-    }
-  };
-
-  const fetchTopContributors = async () => {
-    try {
-      const response = await api.get('/community/top-contributors');
-      if (response.data.success) {
-        setTopContributors(response.data.contributors);
-      }
-    } catch (error) {
-      console.error('Error fetching top contributors:', error);
-      setTopContributors([]);
-    }
-  };
-
-  const fetchEvents = async () => {
-    try {
-      const response = await api.get('/events');
-      if (response.data.success) {
-        setEvents(response.data.events);
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      setEvents([]);
-    }
-  };
-
-  const handleJoinGroup = async (groupId) => {
-    try {
-      const response = await api.post(`/groups/${groupId}/join`);
-      if (response.data.success) {
-        fetchGroups();
-      }
-    } catch (error) {
-      console.error('Error joining group:', error);
-      // Optimistic update
-      setGroups(prev => 
-        prev.map(group => 
-          group.id === groupId 
-            ? { ...group, joined: true, members: group.members + 1 }
-            : group
-        )
-      );
-    }
-  };
-
-  const handleLeaveGroup = async (groupId) => {
-    try {
-      const response = await api.post(`/groups/${groupId}/leave`);
-      if (response.data.success) {
-        fetchGroups();
-      }
-    } catch (error) {
-      console.error('Error leaving group:', error);
-      // Optimistic update
-      setGroups(prev => 
-        prev.map(group => 
-          group.id === groupId 
-            ? { ...group, joined: false, members: group.members - 1 }
-            : group
-        )
-      );
-    }
-  };
-
-  const handleCreateGroup = () => {
-    alert('Create group functionality coming soon!');
-  };
-
-  const handleAttendEvent = async (eventId) => {
-    try {
-      const response = await api.post(`/events/${eventId}/attend`);
-      if (response.data.success) {
-        fetchEvents();
-      }
-    } catch (error) {
-      console.error('Error attending event:', error);
-    }
-  };
-
-  const handleViewProfile = (userId) => {
-    console.log('View profile:', userId);
-  };
-
-  // Button interaction handlers
   const handleButtonMouseEnter = (buttonId) => {
     setHoveredButton(buttonId);
   };
@@ -414,63 +242,7 @@ export default function StudentDashboard() {
             handleButtonMouseUp={handleButtonMouseUp}
           />
         )}
-        
-        {activeSection === 'marketplace' && (
-          <MarketplaceSection 
-            hoveredButton={hoveredButton}
-            pressedButton={pressedButton}
-            handleButtonMouseEnter={handleButtonMouseEnter}
-            handleButtonMouseLeave={handleButtonMouseLeave}
-            handleButtonMouseDown={handleButtonMouseDown}
-            handleButtonMouseUp={handleButtonMouseUp}
-          />
-        )}
-        
-        {activeSection === 'community' && (
-          <CommunitySection 
-            feedPosts={feedPosts}
-            loadingFeed={loadingFeed}
-            feedError={feedError}
-            newPostContent={newPostContent}
-            setNewPostContent={setNewPostContent}
-            newPostImage={newPostImage}
-            setNewPostImage={setNewPostImage}
-            posting={posting}
-            handleCreatePost={handleCreatePost}
-            handleLikePost={handleLikePost}
-            groups={groups}
-            loadingGroups={loadingGroups}
-            messages={messages}
-            loadingMessages={loadingMessages}
-            topContributors={topContributors}
-            events={events}
-            handleJoinGroup={handleJoinGroup}
-            handleLeaveGroup={handleLeaveGroup}
-            handleCreateGroup={handleCreateGroup}
-            handleAttendEvent={handleAttendEvent}
-            handleViewProfile={handleViewProfile}
-            hoveredButton={hoveredButton}
-            pressedButton={pressedButton}
-            handleButtonMouseEnter={handleButtonMouseEnter}
-            handleButtonMouseLeave={handleButtonMouseLeave}
-            handleButtonMouseDown={handleButtonMouseDown}
-            handleButtonMouseUp={handleButtonMouseUp}
-          />
-        )}
       </div>
-
-      {/* Modals */}
-      {showNotifications && (
-        <Notifications onClose={() => setShowNotifications(false)} />
-      )}
-
-      {showSellerModal && (
-        <SellerApplicationModal onClose={() => setShowSellerModal(false)} />
-      )}
-
-      {showSellerDashboard && (
-        <SellerDashboard onClose={() => setShowSellerDashboard(false)} />
-      )}
     </div>
   );
 }

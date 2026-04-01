@@ -25,11 +25,9 @@ function AppContent() {
     );
   }
 
-  // If user is logged in, show dashboard
   if (user) {
     const userRole = user.profile?.role || 'student';
     
-    // Admin user - show admin dashboard
     if (userRole === 'admin') {
       return (
         <Router>
@@ -43,7 +41,6 @@ function AppContent() {
       );
     }
 
-    // Student user - show student dashboard
     return (
       <Router>
         <Routes>
@@ -56,7 +53,6 @@ function AppContent() {
     );
   }
 
-  // User is NOT logged in - show guest page
   return (
     <Router>
       <Routes>
