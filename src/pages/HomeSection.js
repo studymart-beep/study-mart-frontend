@@ -1,373 +1,234 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
-export default function HomeSection({ 
-  feedPosts = [],
-  loadingFeed = false,
-  feedError = null,
-  newPostContent = '',
-  setNewPostContent,
-  newPostImage = null,
-  setNewPostImage,
-  posting = false,
-  handleCreatePost,
-  handleLikePost,
-  hoveredButton,
-  pressedButton,
-  handleButtonMouseEnter,
-  handleButtonMouseLeave,
-  handleButtonMouseDown,
-  handleButtonMouseUp
-}) {
-  
-  const handleCreatePostClick = () => {
-    if (!newPostContent.trim() && !newPostImage) return;
-    handleCreatePost({ content: newPostContent, image: newPostImage });
+export default function LearningSection() {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/courses');
+      if (response.data.success) {
+        setCourses(response.data.courses || []);
+      }
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const extractVideoId = (url) => {
+    if (!url) return null;
+    if (url.includes('youtube.com/embed/')) {
+      return url.split('/embed/')[1].split('?')[0];
+    }
+    if (url.includes('youtu.be/')) {
+      return url.split('youtu.be/')[1].split('?')[0];
+    }
+    if (url.includes('v=')) {
+      try {
+        return new URL(url).searchParams.get('v');
+      } catch (e) {
+        return null;
+      }
+    }
+    return url;
   };
 
   return (
     <div style={styles.container}>
-      {/* Welcome Header with Logo */}
-      <div style={styles.welcomeHeader}>
+      <div style={styles.header}>
         <div style={styles.logoContainer}>
-          <img src="/logo.jpg" alt="Study Mart" style={styles.logoImage} />
+          <img src="/logo.svg" alt="Study Mart" style={styles.logoImage} />
         </div>
-        <h1 style={styles.welcomeTitle}>Welcome to Study Mart</h1>
-        <p style={styles.welcomeSubtitle}>Your Learning Journey Starts Here</p>
-        <div style={styles.headerGlow}></div>
+        <h1 style={styles.title}>Learning Center</h1>
+        <p style={styles.subtitle}>Expand your knowledge with our courses</p>
       </div>
 
-      {/* Create Post Card */}
-      <div style={styles.createPostCard}>
-        <textarea
-          placeholder="What's on your mind?"
-          value={newPostContent}
-          onChange={(e) => setNewPostContent(e.target.value)}
-          style={styles.postInput}
-          rows="3"
-        />
-        
-        <div style={styles.postActions}>
-          <label style={styles.imageUploadLabel}>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setNewPostImage(e.target.files[0])}
-              style={{ display: 'none' }}
-            />
-            <span style={styles.imageUploadIcon}>📷</span>
-          </label>
-          
-          {newPostImage && (
-            <span style={styles.imageName}>{newPostImage.name}</span>
-          )}
-          
-          <button
-            onClick={handleCreatePostClick}
-            disabled={posting || (!newPostContent.trim() && !newPostImage)}
-            style={{
-              ...styles.postButton,
-              ...(posting || (!newPostContent.trim() && !newPostImage) ? styles.disabled : {})
-            }}
-          >
-            {posting ? 'Posting...' : 'Post'}
-          </button>
+      {loading ? (
+        <div style={styles.loadingContainer}>
+          <div style={styles.loader}></div>
         </div>
-      </div>
-
-      {/* Feed Posts */}
-      <div style={styles.feedContainer}>
-        <h2 style={styles.feedTitle}>Recent Posts</h2>
-        
-        {loadingFeed ? (
-          <div style={styles.loadingContainer}>
-            <div style={styles.loader}></div>
-          </div>
-        ) : feedError ? (
-          <div style={styles.errorMessage}>{feedError}</div>
-        ) : !feedPosts || feedPosts.length === 0 ? (
-          <div style={styles.emptyState}>
-            <p>No posts yet. Be the first to post!</p>
-          </div>
-        ) : (
-          feedPosts.map(post => (
-            <div key={post.id} style={styles.postCard}>
-              <div style={styles.postHeader}>
-                <div style={styles.avatar}>
-                  {post.user?.avatar_url ? (
-                    <img src={post.user.avatar_url} alt={post.user.full_name || 'User'} style={styles.avatarImage} />
+      ) : courses.length === 0 ? (
+        <div style={styles.emptyState}>
+          <p>No courses available yet.</p>
+        </div>
+      ) : (
+        <div style={styles.coursesGrid}>
+          {courses.map(course => {
+            const videoId = extractVideoId(course.youtube_url);
+            return (
+              <div key={course.id} style={styles.courseCard}>
+                <div style={styles.thumbnailContainer}>
+                  {videoId ? (
+                    <img 
+                      src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
+                      alt={course.title}
+                      style={styles.thumbnail}
+                    />
                   ) : (
-                    <span style={styles.avatarPlaceholder}>👤</span>
+                    <div style={styles.placeholderThumbnail}>
+                      <span>📹</span>
+                    </div>
                   )}
                 </div>
-                <div style={styles.postInfo}>
-                  <h4 style={styles.authorName}>{post.user?.full_name || 'Unknown User'}</h4>
-                  <span style={styles.postTime}>
-                    {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently'}
-                  </span>
+                <div style={styles.courseContent}>
+                  <h3 style={styles.courseTitle}>{course.title}</h3>
+                  <p style={styles.courseInstructor}>👨‍🏫 {course.instructor}</p>
+                  <p style={styles.courseDescription}>{course.description}</p>
+                  <div style={styles.courseFooter}>
+                    <div style={styles.courseMeta}>
+                      <span>📊 {course.level || 'All levels'}</span>
+                      <span>⏱️ {course.duration || 'Self-paced'}</span>
+                    </div>
+                    <button style={styles.watchButton}>Watch Now</button>
+                  </div>
                 </div>
               </div>
-              
-              <p style={styles.postContent}>{post.content || ''}</p>
-              
-              {post.image_url && (
-                <img src={post.image_url} alt="Post" style={styles.postImage} />
-              )}
-              
-              <div style={styles.postFooter}>
-                <button
-                  onClick={() => handleLikePost && handleLikePost(post.id)}
-                  style={{
-                    ...styles.likeButton,
-                    ...(post.liked ? styles.liked : {})
-                  }}
-                >
-                  ❤️ {post.likes || 0}
-                </button>
-                <span style={styles.commentCount}>
-                  💬 {post.comments || 0}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 const styles = {
   container: {
-    width: '100%',
-    maxWidth: '800px',
+    padding: '30px',
+    maxWidth: '1200px',
     margin: '0 auto',
   },
-  welcomeHeader: {
-    position: 'relative',
+  header: {
     textAlign: 'center',
-    padding: '40px 20px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    borderRadius: '12px',
-    marginBottom: '30px',
-    color: 'white',
-    overflow: 'hidden',
+    marginBottom: '40px',
   },
   logoContainer: {
     display: 'flex',
     justifyContent: 'center',
-    marginBottom: '20px',
+    marginBottom: '15px',
   },
   logoImage: {
-    width: '80px',
-    height: '80px',
+    width: '60px',
+    height: '60px',
     borderRadius: '50%',
     objectFit: 'cover',
-    border: '3px solid white',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    border: '2px solid #6366f1',
   },
-  headerGlow: {
-    position: 'absolute',
-    top: '-30%',
-    right: '-10%',
-    width: '200px',
-    height: '200px',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
-    borderRadius: '50%',
-  },
-  welcomeTitle: {
-    fontSize: '36px',
+  title: {
+    fontSize: '32px',
     fontWeight: '700',
-    marginBottom: '10px',
-    position: 'relative',
-    zIndex: 1,
-  },
-  welcomeSubtitle: {
-    fontSize: '18px',
-    opacity: 0.9,
-    position: 'relative',
-    zIndex: 1,
-  },
-  createPostCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    marginBottom: '30px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-  },
-  postInput: {
-    width: '100%',
-    padding: '12px',
-    border: '2px solid #e2e8f0',
-    borderRadius: '8px',
-    fontSize: '16px',
-    resize: 'none',
-    marginBottom: '15px',
-    fontFamily: 'inherit',
-  },
-  postActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  imageUploadLabel: {
-    cursor: 'pointer',
-    padding: '8px 12px',
-    backgroundColor: '#f1f5f9',
-    borderRadius: '8px',
-    transition: 'all 0.2s ease',
-  },
-  imageUploadIcon: {
-    fontSize: '20px',
-  },
-  imageName: {
-    fontSize: '14px',
-    color: '#64748b',
-    flex: 1,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  postButton: {
-    padding: '10px 24px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    marginLeft: 'auto',
-  },
-  disabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  feedContainer: {
-    width: '100%',
-  },
-  feedTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
     color: '#1e293b',
-    marginBottom: '20px',
+    marginBottom: '10px',
   },
-  postCard: {
+  subtitle: {
+    fontSize: '18px',
+    color: '#64748b',
+  },
+  coursesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+    gap: '20px',
+  },
+  courseCard: {
     backgroundColor: 'white',
     borderRadius: '12px',
-    padding: '20px',
-    marginBottom: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  postHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '12px',
-  },
-  avatar: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '24px',
-    backgroundColor: '#e2e8f0',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s ease',
   },
-  avatarImage: {
+  thumbnailContainer: {
+    height: '180px',
+    overflow: 'hidden',
+    backgroundColor: '#f1f5f9',
+  },
+  thumbnail: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
   },
-  avatarPlaceholder: {
-    fontSize: '24px',
+  placeholderThumbnail: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '48px',
+    backgroundColor: '#e2e8f0',
   },
-  postInfo: {
-    flex: 1,
+  courseContent: {
+    padding: '20px',
   },
-  authorName: {
-    fontSize: '16px',
+  courseTitle: {
+    fontSize: '18px',
     fontWeight: '600',
     color: '#1e293b',
-    margin: '0 0 4px 0',
+    marginBottom: '5px',
   },
-  postTime: {
+  courseInstructor: {
+    fontSize: '14px',
+    color: '#64748b',
+    marginBottom: '10px',
+  },
+  courseDescription: {
+    fontSize: '14px',
+    color: '#334155',
+    marginBottom: '15px',
+    lineHeight: '1.5',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+  },
+  courseFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  courseMeta: {
+    display: 'flex',
+    gap: '10px',
     fontSize: '12px',
     color: '#64748b',
   },
-  postContent: {
-    fontSize: '16px',
-    color: '#334155',
-    lineHeight: '1.5',
-    marginBottom: '15px',
-  },
-  postImage: {
-    width: '100%',
-    maxHeight: '400px',
-    objectFit: 'cover',
-    borderRadius: '8px',
-    marginBottom: '15px',
-  },
-  postFooter: {
-    display: 'flex',
-    gap: '10px',
-    borderTop: '1px solid #e2e8f0',
-    paddingTop: '15px',
-  },
-  likeButton: {
-    padding: '8px 16px',
-    backgroundColor: '#f1f5f9',
+  watchButton: {
+    padding: '6px 12px',
+    backgroundColor: '#6366f1',
+    color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '600',
     cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    transition: 'all 0.2s ease',
-  },
-  liked: {
-    backgroundColor: '#fee2e2',
-    color: '#ef4444',
-  },
-  commentCount: {
-    padding: '8px 16px',
-    backgroundColor: '#f1f5f9',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
   },
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
-    padding: '40px',
+    padding: '50px',
   },
   loader: {
     border: '4px solid #f3f3f3',
-    borderTop: '4px solid #667eea',
+    borderTop: '4px solid #6366f1',
     borderRadius: '50%',
     width: '40px',
     height: '40px',
     animation: 'spin 1s linear infinite',
   },
-  errorMessage: {
-    padding: '20px',
-    backgroundColor: '#fee2e2',
-    color: '#dc2626',
-    borderRadius: '8px',
-    textAlign: 'center',
-  },
   emptyState: {
-    padding: '40px',
+    textAlign: 'center',
+    padding: '50px',
     backgroundColor: 'white',
     borderRadius: '12px',
-    textAlign: 'center',
     color: '#64748b',
     fontSize: '16px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
   },
 };
 

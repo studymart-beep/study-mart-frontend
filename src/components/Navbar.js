@@ -23,73 +23,77 @@ export default function Navbar({
       <div style={styles.navContainer}>
         {/* Logo */}
         <div style={styles.logoContainer}>
-          <img src="/logo.png" alt="Study Mart" style={styles.logoImage} />
+          <img src="/logo.svg" alt="Study Mart" style={styles.logoImage} />
           <span style={styles.logoText}>Study Mart</span>
         </div>
         
         {/* Navigation Buttons */}
-        <div style={styles.navButtons}>
-          <button 
-            style={{
-              ...styles.navButton,
-              ...(activeSection === 'home' ? styles.navButtonActive : {}),
-              ...(hoveredButton === 'nav-home' ? styles.navButtonHover : {}),
-              ...(pressedButton === 'nav-home' ? styles.navButtonPressed : {})
-            }}
-            onClick={() => setActiveSection('home')}
-            onMouseEnter={() => handleButtonMouseEnter('nav-home')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('nav-home')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            Home
-          </button>
-          <button 
-            style={{
-              ...styles.navButton,
-              ...(activeSection === 'learning' ? styles.navButtonActive : {}),
-              ...(hoveredButton === 'nav-learning' ? styles.navButtonHover : {}),
-              ...(pressedButton === 'nav-learning' ? styles.navButtonPressed : {})
-            }}
-            onClick={() => setActiveSection('learning')}
-            onMouseEnter={() => handleButtonMouseEnter('nav-learning')}
-            onMouseLeave={handleButtonMouseLeave}
-            onMouseDown={() => handleButtonMouseDown('nav-learning')}
-            onMouseUp={handleButtonMouseUp}
-          >
-            Learning
-          </button>
-        </div>
+        {user && (
+          <div style={styles.navButtons}>
+            <button 
+              style={{
+                ...styles.navButton,
+                ...(activeSection === 'home' ? styles.navButtonActive : {}),
+                ...(hoveredButton === 'nav-home' ? styles.navButtonHover : {}),
+                ...(pressedButton === 'nav-home' ? styles.navButtonPressed : {})
+              }}
+              onClick={() => setActiveSection('home')}
+              onMouseEnter={() => handleButtonMouseEnter('nav-home')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('nav-home')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              Home
+            </button>
+            <button 
+              style={{
+                ...styles.navButton,
+                ...(activeSection === 'learning' ? styles.navButtonActive : {}),
+                ...(hoveredButton === 'nav-learning' ? styles.navButtonHover : {}),
+                ...(pressedButton === 'nav-learning' ? styles.navButtonPressed : {})
+              }}
+              onClick={() => setActiveSection('learning')}
+              onMouseEnter={() => handleButtonMouseEnter('nav-learning')}
+              onMouseLeave={handleButtonMouseLeave}
+              onMouseDown={() => handleButtonMouseDown('nav-learning')}
+              onMouseUp={handleButtonMouseUp}
+            >
+              Learning
+            </button>
+          </div>
+        )}
 
         {/* Profile */}
-        <div style={styles.rightSection}>
-          <div style={styles.profileContainer}>
-            <button 
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              style={styles.profileButton}
-            >
-              <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
-              <div style={styles.avatarSmall}>
-                {profileData.avatar_url ? (
-                  <img src={profileData.avatar_url} alt="Avatar" style={styles.avatarSmallImage} />
-                ) : (
-                  <span>👤</span>
-                )}
-              </div>
-            </button>
+        {user && (
+          <div style={styles.rightSection}>
+            <div style={styles.profileContainer}>
+              <button 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                style={styles.profileButton}
+              >
+                <span style={styles.userName}>{user?.profile?.full_name || 'Profile'}</span>
+                <div style={styles.avatarSmall}>
+                  {profileData.avatar_url ? (
+                    <img src={profileData.avatar_url} alt="Avatar" style={styles.avatarSmallImage} />
+                  ) : (
+                    <span>👤</span>
+                  )}
+                </div>
+              </button>
 
-            {showProfileMenu && (
-              <div style={styles.dropdownMenu}>
-                <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={styles.menuItem}>
-                  <span style={styles.menuIcon}>⚙️</span> Settings
-                </button>
-                <button onClick={handleLogout} style={styles.menuItem}>
-                  <span style={styles.menuIcon}>🚪</span> Logout
-                </button>
-              </div>
-            )}
+              {showProfileMenu && (
+                <div style={styles.dropdownMenu}>
+                  <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={styles.menuItem}>
+                    <span style={styles.menuIcon}>⚙️</span> Settings
+                  </button>
+                  <button onClick={handleLogout} style={styles.menuItem}>
+                    <span style={styles.menuIcon}>🚪</span> Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );
@@ -114,20 +118,20 @@ const styles = {
   logoContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '12px',
     background: 'rgba(255,255,255,0.1)',
-    padding: '5px 16px',
-    borderRadius: '40px',
+    padding: '8px 20px',
+    borderRadius: '50px',
   },
   logoImage: {
-    width: '32px',
-    height: '32px',
+    width: '40px',
+    height: '40px',
     borderRadius: '50%',
     objectFit: 'cover',
   },
   logoText: {
     color: 'white',
-    fontSize: '20px',
+    fontSize: '22px',
     fontWeight: 'bold',
   },
   navButtons: {
