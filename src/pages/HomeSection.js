@@ -26,12 +26,17 @@ export default function HomeSection({
 
   return (
     <div style={styles.container}>
+      {/* Welcome Header with Logo */}
       <div style={styles.welcomeHeader}>
+        <div style={styles.logoContainer}>
+          <img src="/logo.jpg" alt="Study Mart" style={styles.logoImage} />
+        </div>
         <h1 style={styles.welcomeTitle}>Welcome to Study Mart</h1>
         <p style={styles.welcomeSubtitle}>Your Learning Journey Starts Here</p>
         <div style={styles.headerGlow}></div>
       </div>
 
+      {/* Create Post Card */}
       <div style={styles.createPostCard}>
         <textarea
           placeholder="What's on your mind?"
@@ -69,6 +74,7 @@ export default function HomeSection({
         </div>
       </div>
 
+      {/* Feed Posts */}
       <div style={styles.feedContainer}>
         <h2 style={styles.feedTitle}>Recent Posts</h2>
         
@@ -144,6 +150,19 @@ const styles = {
     marginBottom: '30px',
     color: 'white',
     overflow: 'hidden',
+  },
+  logoContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '20px',
+  },
+  logoImage: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '3px solid white',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
   },
   headerGlow: {
     position: 'absolute',

@@ -27,7 +27,6 @@ export default function LearningSection() {
       if (response.data.success) {
         setCourses(response.data.courses || []);
         
-        // Extract unique categories
         const uniqueCategories = [...new Set(response.data.courses.map(c => c.category))];
         setCategories(uniqueCategories.filter(Boolean));
       }
@@ -72,7 +71,6 @@ export default function LearningSection() {
 
   const extractVideoId = (url) => {
     if (!url) return null;
-    
     if (url.includes('youtube.com/embed/')) {
       return url.split('/embed/')[1].split('?')[0];
     }
@@ -95,7 +93,11 @@ export default function LearningSection() {
 
   return (
     <div style={styles.container}>
+      {/* Header with Logo */}
       <div style={styles.header}>
+        <div style={styles.logoContainer}>
+          <img src="/logo.jpg" alt="Study Mart" style={styles.logoImage} />
+        </div>
         <h1 style={styles.title}>Learning Center</h1>
         <p style={styles.subtitle}>Expand your knowledge with our courses</p>
       </div>
@@ -215,28 +217,40 @@ const styles = {
   container: {
     padding: '30px',
     maxWidth: '1200px',
-    margin: '0 auto'
+    margin: '0 auto',
   },
   header: {
     textAlign: 'center',
-    marginBottom: '40px'
+    marginBottom: '40px',
+  },
+  logoContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '20px',
+  },
+  logoImage: {
+    width: '60px',
+    height: '60px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
   },
   title: {
     fontSize: '36px',
     fontWeight: '700',
     color: '#1e293b',
-    marginBottom: '10px'
+    marginBottom: '10px',
   },
   subtitle: {
     fontSize: '18px',
-    color: '#64748b'
+    color: '#64748b',
   },
   categoriesSection: {
     display: 'flex',
     gap: '10px',
     marginBottom: '30px',
     flexWrap: 'wrap',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   categoryButton: {
     padding: '8px 16px',
@@ -246,16 +260,16 @@ const styles = {
     fontSize: '14px',
     color: '#64748b',
     cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
   },
   categoryActive: {
     backgroundColor: '#6366f1',
-    color: 'white'
+    color: 'white',
   },
   coursesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '20px'
+    gap: '20px',
   },
   courseCard: {
     backgroundColor: 'white',
@@ -263,18 +277,18 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    cursor: 'pointer'
+    cursor: 'pointer',
   },
   thumbnailContainer: {
     position: 'relative',
     height: '180px',
     overflow: 'hidden',
-    backgroundColor: '#f1f5f9'
+    backgroundColor: '#f1f5f9',
   },
   thumbnail: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'cover',
   },
   placeholderThumbnail: {
     width: '100%',
@@ -284,7 +298,7 @@ const styles = {
     justifyContent: 'center',
     fontSize: '48px',
     backgroundColor: '#e2e8f0',
-    color: '#94a3b8'
+    color: '#94a3b8',
   },
   playOverlay: {
     position: 'absolute',
@@ -297,12 +311,12 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0,
-    transition: 'opacity 0.2s ease'
+    transition: 'opacity 0.2s ease',
   },
   playIcon: {
     fontSize: '48px',
     color: 'white',
-    textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+    textShadow: '0 2px 10px rgba(0,0,0,0.5)',
   },
   enrolledBadge: {
     position: 'absolute',
@@ -313,21 +327,21 @@ const styles = {
     padding: '4px 8px',
     borderRadius: '4px',
     fontSize: '12px',
-    fontWeight: '600'
+    fontWeight: '600',
   },
   courseContent: {
-    padding: '20px'
+    padding: '20px',
   },
   courseTitle: {
     fontSize: '18px',
     fontWeight: '600',
     color: '#1e293b',
-    marginBottom: '5px'
+    marginBottom: '5px',
   },
   courseInstructor: {
     fontSize: '14px',
     color: '#64748b',
-    marginBottom: '10px'
+    marginBottom: '10px',
   },
   courseDescription: {
     fontSize: '14px',
@@ -337,18 +351,18 @@ const styles = {
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   courseFooter: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   courseMeta: {
     display: 'flex',
     gap: '10px',
     fontSize: '12px',
-    color: '#64748b'
+    color: '#64748b',
   },
   enrollButton: {
     padding: '6px 12px',
@@ -358,7 +372,7 @@ const styles = {
     borderRadius: '6px',
     fontSize: '13px',
     fontWeight: '600',
-    cursor: 'pointer'
+    cursor: 'pointer',
   },
   watchButton: {
     padding: '6px 12px',
@@ -368,12 +382,12 @@ const styles = {
     borderRadius: '6px',
     fontSize: '13px',
     fontWeight: '600',
-    cursor: 'pointer'
+    cursor: 'pointer',
   },
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
-    padding: '50px'
+    padding: '50px',
   },
   loader: {
     border: '4px solid #f3f3f3',
@@ -381,7 +395,7 @@ const styles = {
     borderRadius: '50%',
     width: '40px',
     height: '40px',
-    animation: 'spin 1s linear infinite'
+    animation: 'spin 1s linear infinite',
   },
   emptyState: {
     textAlign: 'center',
@@ -389,6 +403,19 @@ const styles = {
     backgroundColor: 'white',
     borderRadius: '12px',
     color: '#64748b',
-    fontSize: '16px'
-  }
+    fontSize: '16px',
+  },
 };
+
+const globalStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = globalStyles;
+  document.head.appendChild(style);
+}
