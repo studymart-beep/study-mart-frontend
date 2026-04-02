@@ -15,16 +15,9 @@ export default function Navbar({
 }) {
   const { user, signOut } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [theme, setTheme] = useState('light');
 
-  const handleLogout = () => {
-    signOut();
-  };
-
-  const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      alert('Account deletion requested');
-    }
-  };
+  const handleLogout = () => signOut();
 
   const handleThemeChange = () => {
     const themes = ['light', 'dark', 'system'];
@@ -34,18 +27,25 @@ export default function Navbar({
     document.documentElement.setAttribute('data-theme', nextTheme);
   };
 
-  const [theme, setTheme] = useState('light');
+  const handleDeleteAccount = () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      alert('Account deletion requested');
+    }
+  };
 
   return (
     <nav style={styles.navbar}>
       <div style={styles.navContainer}>
         {/* Logo Section */}
         <div style={styles.logoContainer}>
-          <img src="/Study Mart.png" alt="Study Mart" style={styles.logoImage} />
-          <span style={styles.logoText}>Study Mart</span>
+          <img src="/logo.png" alt="Study Mart" style={styles.logoImage} />
+          <div>
+            <span style={styles.logoText}>Study Mart</span>
+            <span style={styles.logoSubtext}>Learn. Buy. Grow.</span>
+          </div>
         </div>
         
-        {/* Navigation Buttons - Only show when user is logged in */}
+        {/* Navigation Buttons */}
         {user && (
           <div style={styles.navButtons}>
             <button 
@@ -116,32 +116,28 @@ export default function Navbar({
                     }}
                     style={styles.menuItem}
                   >
-                    <span style={styles.menuIcon}>⚙️</span>
-                    Settings
+                    <span style={styles.menuIcon}>⚙️</span> Settings
                   </button>
                   
                   <button 
                     onClick={handleThemeChange}
                     style={styles.menuItem}
                   >
-                    <span style={styles.menuIcon}>🎨</span>
-                    Theme ({theme})
+                    <span style={styles.menuIcon}>🎨</span> Theme ({theme})
                   </button>
                   
                   <button 
                     onClick={handleLogout}
                     style={styles.menuItem}
                   >
-                    <span style={styles.menuIcon}>🚪</span>
-                    Logout
+                    <span style={styles.menuIcon}>🚪</span> Logout
                   </button>
 
                   <button 
                     onClick={handleDeleteAccount}
                     style={{...styles.menuItem, ...styles.deleteItem}}
                   >
-                    <span style={styles.menuIcon}>🗑️</span>
-                    Delete Account
+                    <span style={styles.menuIcon}>🗑️</span> Delete Account
                   </button>
                 </div>
               )}
@@ -180,19 +176,24 @@ const styles = {
     padding: '8px 20px',
     borderRadius: '50px',
     backdropFilter: 'blur(5px)',
-    cursor: 'pointer',
   },
   logoImage: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
+    width: '45px',
+    height: '45px',
+    borderRadius: '10px',
     objectFit: 'cover',
   },
   logoText: {
     color: 'white',
-    fontSize: '22px',
+    fontSize: '20px',
     fontWeight: 'bold',
+    display: 'block',
     letterSpacing: '0.5px',
+  },
+  logoSubtext: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '10px',
+    display: 'block',
   },
   navButtons: {
     display: 'flex',
@@ -211,7 +212,6 @@ const styles = {
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
     backdropFilter: 'blur(5px)',
-    letterSpacing: '0.3px',
   },
   navButtonHover: {
     background: 'rgba(255, 255, 255, 0.25)',
@@ -305,10 +305,6 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     transition: 'all 0.2s ease',
-    ':hover': {
-      backgroundColor: '#f1f5f9',
-      transform: 'translateX(5px)',
-    },
   },
   menuIcon: {
     fontSize: '18px',
@@ -320,8 +316,5 @@ const styles = {
     borderTop: '1px solid #e2e8f0',
     marginTop: '4px',
     paddingTop: '12px',
-    ':hover': {
-      backgroundColor: '#fee2e2',
-    },
   },
 };

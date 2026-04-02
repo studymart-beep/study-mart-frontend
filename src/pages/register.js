@@ -29,8 +29,9 @@ export default function Register() {
     <div className="register-container">
       <div className="register-card">
         <div className="logo-wrapper">
-          <img src="/Study Mart.png" alt="Study Mart" className="logo-img" />
+          <img src="/logo.png" alt="Study Mart" className="logo-img" />
           <h1 className="app-name">Study Mart</h1>
+          <p className="tagline">Learn. Buy. Grow.</p>
         </div>
         <h2>Create Account</h2>
         <p>Join our learning community</p>
@@ -75,7 +76,7 @@ export default function Register() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .register-container {
           min-height: 100vh;
           display: flex;
@@ -86,7 +87,7 @@ export default function Register() {
         .register-card {
           background: white;
           padding: 40px;
-          borderRadius: 16px;
+          border-radius: 16px;
           box-shadow: 0 20px 40px rgba(0,0,0,0.1);
           width: 90%;
           max-width: 420px;
@@ -98,7 +99,7 @@ export default function Register() {
         .logo-img {
           width: 70px;
           height: 70px;
-          border-radius: 50%;
+          border-radius: 15px;
           object-fit: cover;
         }
         .app-name {
@@ -106,6 +107,12 @@ export default function Register() {
           font-weight: bold;
           color: #667eea;
           margin-top: 10px;
+          margin-bottom: 5px;
+        }
+        .tagline {
+          color: #888;
+          font-size: 12px;
+          letter-spacing: 1px;
         }
         h2 {
           font-size: 24px;

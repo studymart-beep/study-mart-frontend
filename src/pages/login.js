@@ -28,8 +28,9 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="logo-wrapper">
-          <img src="/Study Mart.png" alt="Study Mart" className="logo-img" />
+          <img src="/logo.png" alt="Study Mart" className="logo-img" />
           <h1 className="app-name">Study Mart</h1>
+          <p className="tagline">Learn. Buy. Grow.</p>
         </div>
         <h2>Welcome Back</h2>
         <p>Sign in to continue your learning journey</p>
@@ -65,7 +66,7 @@ export default function Login() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .login-container {
           min-height: 100vh;
           display: flex;
@@ -88,7 +89,7 @@ export default function Login() {
         .logo-img {
           width: 70px;
           height: 70px;
-          border-radius: 50%;
+          border-radius: 15px;
           object-fit: cover;
         }
         .app-name {
@@ -96,6 +97,12 @@ export default function Login() {
           font-weight: bold;
           color: #667eea;
           margin-top: 10px;
+          margin-bottom: 5px;
+        }
+        .tagline {
+          color: #888;
+          font-size: 12px;
+          letter-spacing: 1px;
         }
         h2 {
           font-size: 24px;
