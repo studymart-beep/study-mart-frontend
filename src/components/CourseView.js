@@ -1,21 +1,53 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-export default function CourseView({ course, onClose, onEnroll, isEnrolled }) {
-  const [activeTab, setActiveTab] = useState('materials');
+export default function CoursePage() {
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [course, setCourse] = useState(null);
   const [contents, setContents] = useState([]);
+  const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('materials');
   const [selectedVideo, setSelectedVideo] = useState(null);
 
   useEffect(() => {
+    fetchCourse();
+    checkEnrollment();
     if (isEnrolled) {
       fetchContents();
     }
-  }, [course.id, isEnrolled]);
+  }, [courseId, isEnrolled]);
+
+  const fetchCourse = async () => {
+    try {
+      const response = await api.get(`/courses/${courseId}`);
+      if (response.data.success) {
+        setCourse(response.data.course);
+      }
+    } catch (error) {
+      console.error('Error fetching course:', error);
+    }
+  };
+
+  const checkEnrollment = async () => {
+    try {
+      const response = await api.get('/courses/my-enrollments');
+      if (response.data.success) {
+        const enrolled = response.data.enrollments.some(e => e.course_id === courseId);
+        setIsEnrolled(enrolled);
+      }
+    } catch (error) {
+      console.error('Error checking enrollment:', error);
+    }
+  };
 
   const fetchContents = async () => {
     try {
-      const response = await api.get(`/courses/${course.id}/contents`);
+      const response = await api.get(`/courses/${courseId}/contents`);
       if (response.data.success) {
         setContents(response.data.contents || []);
         const firstVideo = response.data.contents?.find(c => c.content_type === 'video');
@@ -29,9 +61,14 @@ export default function CourseView({ course, onClose, onEnroll, isEnrolled }) {
   };
 
   const handleEnroll = async () => {
-    const success = await onEnroll(course.id);
-    if (success) {
-      fetchContents();
+    try {
+      const response = await api.post(`/courses/${courseId}/enroll`);
+      if (response.data.success) {
+        setIsEnrolled(true);
+        fetchContents();
+      }
+    } catch (error) {
+      console.error('Error enrolling:', error);
     }
   };
 
@@ -46,10 +83,10 @@ export default function CourseView({ course, onClose, onEnroll, isEnrolled }) {
   };
 
   const tabs = [
-    { id: 'materials', icon: '📄', label: 'Materials' },
-    { id: 'videos', icon: '🎥', label: 'Videos' },
-    { id: 'cbt', icon: '📝', label: 'CBT' },
-    { id: 'exam', icon: '📋', label: 'Exam' }
+    { id: 'materials', icon: '📄', label: 'Materials', count: contents.filter(c => c.content_type === 'pdf').length },
+    { id: 'videos', icon: '🎥', label: 'Videos', count: contents.filter(c => c.content_type === 'video').length },
+    { id: 'cbt', icon: '📝', label: 'CBT', count: contents.filter(c => c.content_type === 'cbt').length },
+    { id: 'exam', icon: '📋', label: 'Exam', count: contents.filter(c => c.content_type === 'exam').length }
   ];
 
   const materials = contents.filter(c => c.content_type === 'pdf');
@@ -57,102 +94,85 @@ export default function CourseView({ course, onClose, onEnroll, isEnrolled }) {
   const cbtList = contents.filter(c => c.content_type === 'cbt');
   const exams = contents.filter(c => c.content_type === 'exam');
 
-  if (!isEnrolled) {
-    return (
-      <div style={styles.modalOverlay} onClick={onClose}>
-        <div style={styles.modal} onClick={e => e.stopPropagation()}>
-          <div style={styles.header}>
-            <h2 style={styles.title}>{course.title}</h2>
-            <button onClick={onClose} style={styles.closeButton}>×</button>
-          </div>
-          <div style={styles.content}>
-            <div style={styles.courseInfo}>
-              <p style={styles.description}>{course.description}</p>
-              <div style={styles.meta}>
-                <span>👨‍🏫 {course.instructor}</span>
-                <span>📊 {course.level_option || 'All levels'}</span>
-              </div>
-              <button onClick={handleEnroll} style={styles.enrollButton}>Enroll Now</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (!course) {
+    return <div style={styles.loading}>Loading...</div>;
   }
 
   return (
-    <div style={styles.modalOverlay} onClick={onClose}>
-      <div style={styles.modalFull} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div style={styles.header}>
+    <div style={styles.container}>
+      {/* Course Header */}
+      <div style={styles.header}>
+        <button onClick={() => navigate('/dashboard')} style={styles.backButton}>← Back to Dashboard</button>
+        <h1 style={styles.courseTitle}>{course.title}</h1>
+        <p style={styles.courseInstructor}>👨‍🏫 {course.instructor || 'Expert Instructor'}</p>
+        {!isEnrolled && (
+          <button onClick={handleEnroll} style={styles.enrollButton}>Enroll Now</button>
+        )}
+        {isEnrolled && (
+          <div style={styles.enrolledBadge}>✅ You are enrolled in this course</div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div style={styles.tabs}>
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              ...styles.tab,
+              ...(activeTab === tab.id ? styles.tabActive : {})
+            }}
+          >
+            <span>{tab.icon}</span> {tab.label}
+            {tab.count > 0 && <span style={styles.badge}>{tab.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div style={styles.tabContent}>
+        {/* Materials Tab */}
+        {activeTab === 'materials' && (
           <div>
-            <h2 style={styles.title}>{course.title}</h2>
-            <p style={styles.subtitle}>👨‍🏫 {course.instructor}</p>
-          </div>
-          <button onClick={onClose} style={styles.closeButton}>×</button>
-        </div>
-
-        {/* Tabs */}
-        <div style={styles.tabs}>
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                ...styles.tab,
-                ...(activeTab === tab.id ? styles.tabActive : {})
-              }}
-            >
-              <span>{tab.icon}</span> {tab.label}
-              {tab.id === 'materials' && materials.length > 0 && <span style={styles.badge}>{materials.length}</span>}
-              {tab.id === 'videos' && videos.length > 0 && <span style={styles.badge}>{videos.length}</span>}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        <div style={styles.tabContent}>
-          {/* Materials Tab */}
-          {activeTab === 'materials' && (
-            <div>
-              {loading ? (
-                <div style={styles.loading}>Loading materials...</div>
-              ) : materials.length === 0 ? (
-                <div style={styles.emptyState}>No materials available yet.</div>
-              ) : (
-                <div style={styles.materialsGrid}>
-                  {materials.map((item, index) => (
-                    <div key={item.id} style={styles.materialCard}>
-                      <div style={styles.materialIcon}>📄</div>
-                      <div style={styles.materialInfo}>
-                        <h4>{item.title}</h4>
-                        <p>PDF Document • {index + 1}</p>
-                      </div>
-                      <button 
-                        onClick={() => window.open(item.file_url, '_blank')} 
-                        style={styles.downloadBtn}
-                      >
-                        Download
-                      </button>
+            {!isEnrolled ? (
+              <div style={styles.lockedMessage}>Enroll to access course materials</div>
+            ) : materials.length === 0 ? (
+              <div style={styles.emptyState}>No materials available yet.</div>
+            ) : (
+              <div style={styles.materialsGrid}>
+                {materials.map((item, index) => (
+                  <div key={item.id} style={styles.materialCard}>
+                    <div style={styles.materialIcon}>📄</div>
+                    <div style={styles.materialInfo}>
+                      <h4>{item.title}</h4>
+                      <p>PDF Document • {index + 1}</p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    <button 
+                      onClick={() => window.open(item.file_url, '_blank')} 
+                      style={styles.downloadBtn}
+                    >
+                      Download
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-          {/* Videos Tab */}
-          {activeTab === 'videos' && (
-            <div style={styles.videosContainer}>
-              {loading ? (
-                <div style={styles.loading}>Loading videos...</div>
-              ) : videos.length === 0 ? (
-                <div style={styles.emptyState}>No videos available yet.</div>
-              ) : (
-                <>
-                  {/* Video Player */}
+        {/* Videos Tab */}
+        {activeTab === 'videos' && (
+          <div>
+            {!isEnrolled ? (
+              <div style={styles.lockedMessage}>Enroll to access course videos</div>
+            ) : videos.length === 0 ? (
+              <div style={styles.emptyState}>No videos available yet.</div>
+            ) : (
+              <div style={styles.videosContainer}>
+                <div style={styles.videoPlayer}>
                   {selectedVideo && (
-                    <div style={styles.videoPlayer}>
+                    <>
                       <h3 style={styles.videoTitle}>{selectedVideo.title}</h3>
                       <div style={styles.videoWrapper}>
                         <iframe
@@ -162,150 +182,137 @@ export default function CourseView({ course, onClose, onEnroll, isEnrolled }) {
                           allowFullScreen
                         />
                       </div>
-                    </div>
+                    </>
                   )}
-
-                  {/* Video List */}
-                  <div style={styles.videoList}>
-                    <h4>Course Videos ({videos.length})</h4>
-                    {videos.map((video, index) => (
-                      <div
-                        key={video.id}
-                        onClick={() => setSelectedVideo(video)}
-                        style={{
-                          ...styles.videoItem,
-                          ...(selectedVideo?.id === video.id ? styles.videoItemActive : {})
-                        }}
-                      >
-                        <span>🎬</span>
-                        <div>
-                          <div style={styles.videoItemTitle}>{video.title}</div>
-                          <small>Video {index + 1}</small>
-                        </div>
-                        {selectedVideo?.id === video.id && <span style={styles.playingIcon}>▶ Playing</span>}
+                </div>
+                <div style={styles.videoList}>
+                  <h4>Course Videos ({videos.length})</h4>
+                  {videos.map((video, index) => (
+                    <div
+                      key={video.id}
+                      onClick={() => setSelectedVideo(video)}
+                      style={{
+                        ...styles.videoItem,
+                        ...(selectedVideo?.id === video.id ? styles.videoItemActive : {})
+                      }}
+                    >
+                      <span>🎬</span>
+                      <div>
+                        <div style={styles.videoItemTitle}>{video.title}</div>
+                        <small>Video {index + 1}</small>
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-          {/* CBT Tab */}
-          {activeTab === 'cbt' && (
-            <div>
-              {loading ? (
-                <div style={styles.loading}>Loading CBT questions...</div>
-              ) : cbtList.length === 0 ? (
-                <div style={styles.emptyState}>No CBT available yet.</div>
-              ) : (
-                cbtList.map(cbt => (
-                  <div key={cbt.id} style={styles.cbtCard}>
-                    <div style={styles.cbtHeader}>
-                      <span style={styles.cbtIcon}>📝</span>
-                      <h3>{cbt.title}</h3>
-                    </div>
-                    <p>Computer Based Test - Practice questions to test your knowledge</p>
-                    <button style={styles.startBtn}>Start CBT</button>
+        {/* CBT Tab */}
+        {activeTab === 'cbt' && (
+          <div>
+            {!isEnrolled ? (
+              <div style={styles.lockedMessage}>Enroll to access CBT</div>
+            ) : cbtList.length === 0 ? (
+              <div style={styles.emptyState}>No CBT available yet.</div>
+            ) : (
+              cbtList.map(cbt => (
+                <div key={cbt.id} style={styles.cbtCard}>
+                  <div style={styles.cbtHeader}>
+                    <span style={styles.cbtIcon}>📝</span>
+                    <h3>{cbt.title}</h3>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                  <p>Computer Based Test - Practice questions to test your knowledge</p>
+                  <button style={styles.startBtn}>Start CBT</button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
-          {/* Exam Tab */}
-          {activeTab === 'exam' && (
-            <div>
-              {loading ? (
-                <div style={styles.loading}>Loading exams...</div>
-              ) : exams.length === 0 ? (
-                <div style={styles.emptyState}>No exams available yet.</div>
-              ) : (
-                exams.map(exam => (
-                  <div key={exam.id} style={styles.examCard}>
-                    <div style={styles.examHeader}>
-                      <span style={styles.examIcon}>📋</span>
-                      <h3>{exam.title}</h3>
-                    </div>
-                    <p>Final Examination - Complete to earn your certificate</p>
-                    <div style={styles.examMeta}>
-                      <span>⏱️ Time Limit: 60 mins</span>
-                      <span>📝 Questions: 50</span>
-                    </div>
-                    <button style={styles.startExamBtn}>Start Exam</button>
+        {/* Exam Tab */}
+        {activeTab === 'exam' && (
+          <div>
+            {!isEnrolled ? (
+              <div style={styles.lockedMessage}>Enroll to access exams</div>
+            ) : exams.length === 0 ? (
+              <div style={styles.emptyState}>No exams available yet.</div>
+            ) : (
+              exams.map(exam => (
+                <div key={exam.id} style={styles.examCard}>
+                  <div style={styles.examHeader}>
+                    <span style={styles.examIcon}>📋</span>
+                    <h3>{exam.title}</h3>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
+                  <p>Final Examination - Complete to earn your certificate</p>
+                  <div style={styles.examMeta}>
+                    <span>⏱️ Time Limit: 60 mins</span>
+                    <span>📝 Questions: 50</span>
+                  </div>
+                  <button style={styles.startExamBtn}>Start Exam</button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 const styles = {
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modal: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    width: '90%',
-    maxWidth: '600px',
-    maxHeight: '80vh',
-    overflow: 'auto',
-  },
-  modalFull: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    width: '90%',
-    maxWidth: '1200px',
-    height: '85vh',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  header: {
-    padding: '20px 24px',
-    borderBottom: '1px solid #e2e8f0',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  container: {
+    minHeight: '100vh',
     backgroundColor: '#f8fafc',
   },
-  title: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: '#1e293b',
-    margin: 0,
+  header: {
+    backgroundColor: 'white',
+    padding: '30px',
+    borderBottom: '1px solid #e2e8f0',
   },
-  subtitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    marginTop: '4px',
-  },
-  closeButton: {
+  backButton: {
     background: 'none',
     border: 'none',
-    fontSize: '28px',
+    color: '#6366f1',
+    fontSize: '14px',
     cursor: 'pointer',
+    marginBottom: '15px',
+  },
+  courseTitle: {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: '8px',
+  },
+  courseInstructor: {
+    fontSize: '16px',
     color: '#64748b',
-    padding: '0 10px',
+    marginBottom: '20px',
+  },
+  enrollButton: {
+    padding: '12px 24px',
+    backgroundColor: '#6366f1',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  enrolledBadge: {
+    display: 'inline-block',
+    padding: '12px 24px',
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
   },
   tabs: {
     display: 'flex',
     gap: '4px',
-    padding: '16px 24px',
+    padding: '16px 30px',
     backgroundColor: 'white',
     borderBottom: '1px solid #e2e8f0',
   },
@@ -321,7 +328,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    transition: 'all 0.2s ease',
   },
   tabActive: {
     backgroundColor: '#6366f1',
@@ -336,9 +342,15 @@ const styles = {
     marginLeft: '6px',
   },
   tabContent: {
-    flex: 1,
-    overflow: 'auto',
-    padding: '24px',
+    padding: '30px',
+  },
+  lockedMessage: {
+    textAlign: 'center',
+    padding: '60px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    color: '#64748b',
+    fontSize: '16px',
   },
   materialsGrid: {
     display: 'grid',
@@ -350,7 +362,7 @@ const styles = {
     alignItems: 'center',
     gap: '15px',
     padding: '16px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'white',
     borderRadius: '12px',
     border: '1px solid #e2e8f0',
   },
@@ -376,6 +388,9 @@ const styles = {
   videoPlayer: {
     flex: 2,
     minWidth: '300px',
+    backgroundColor: 'white',
+    padding: '20px',
+    borderRadius: '12px',
   },
   videoWrapper: {
     position: 'relative',
@@ -401,6 +416,9 @@ const styles = {
   videoList: {
     flex: 1,
     minWidth: '250px',
+    backgroundColor: 'white',
+    padding: '20px',
+    borderRadius: '12px',
   },
   videoItem: {
     display: 'flex',
@@ -409,7 +427,6 @@ const styles = {
     padding: '12px',
     borderRadius: '8px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
     marginBottom: '8px',
   },
   videoItemActive: {
@@ -418,16 +435,12 @@ const styles = {
   videoItemTitle: {
     fontWeight: '500',
   },
-  playingIcon: {
-    marginLeft: 'auto',
-    fontSize: '12px',
-    color: '#10b981',
-  },
   cbtCard: {
     padding: '20px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'white',
     borderRadius: '12px',
     marginBottom: '16px',
+    border: '1px solid #e2e8f0',
   },
   cbtHeader: {
     display: 'flex',
@@ -440,9 +453,10 @@ const styles = {
   },
   examCard: {
     padding: '20px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'white',
     borderRadius: '12px',
     marginBottom: '16px',
+    border: '1px solid #e2e8f0',
   },
   examHeader: {
     display: 'flex',
@@ -478,40 +492,17 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer',
   },
-  courseInfo: {
-    padding: '20px',
-  },
-  description: {
-    fontSize: '16px',
-    color: '#334155',
-    lineHeight: '1.6',
-    marginBottom: '20px',
-  },
-  meta: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '20px',
-    color: '#64748b',
-  },
-  enrollButton: {
-    width: '100%',
-    padding: '14px',
-    backgroundColor: '#6366f1',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
   loading: {
     textAlign: 'center',
-    padding: '40px',
+    padding: '50px',
+    fontSize: '18px',
     color: '#64748b',
   },
   emptyState: {
     textAlign: 'center',
-    padding: '40px',
+    padding: '60px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
     color: '#64748b',
   },
 };

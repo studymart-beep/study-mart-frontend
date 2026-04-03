@@ -7,12 +7,17 @@ import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';
 import StudentDashboard from './pages/studentdashboard';
+import AdminDashboard from './pages/admindashboard';
+import CoursePage from './pages/CoursePage';
 import PaymentVerify from './pages/paymentverify';
 import SellerApplicationCallback from './pages/sellerapplicationcallback';
 
 function AppContent() {
   const { user, loading } = useAuth();
   
+  console.log('AppContent - User:', user);
+  console.log('AppContent - User role:', user?.profile?.role);
+
   // Handle email confirmation redirect
   useEffect(() => {
     const hash = window.location.hash;
@@ -20,9 +25,6 @@ function AppContent() {
       window.location.href = '/login';
     }
   }, []);
-
-  console.log('AppContent - User:', user);
-  console.log('AppContent - User role:', user?.profile?.role);
 
   if (loading) {
     return (
@@ -32,19 +34,28 @@ function AppContent() {
     );
   }
 
-  // If user is logged in, show student dashboard
   if (user) {
-    // Redirect admins to separate admin site
-    if (user.profile?.role === 'admin') {
-      window.location.href = 'https://study-mart-admin.vercel.app';
-      return null;
+    const userRole = user.profile?.role || 'student';
+    
+    if (userRole === 'admin') {
+      return (
+        <Router>
+          <Routes>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/course/:courseId" element={<CoursePage />} />
+            <Route path="/payment/verify" element={<PaymentVerify />} />
+            <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </Router>
+      );
     }
 
-    // Student user - show student dashboard
     return (
       <Router>
         <Routes>
           <Route path="/dashboard" element={<StudentDashboard />} />
+          <Route path="/course/:courseId" element={<CoursePage />} />
           <Route path="/payment/verify" element={<PaymentVerify />} />
           <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -53,7 +64,6 @@ function AppContent() {
     );
   }
 
-  // User is NOT logged in - show guest page
   return (
     <Router>
       <Routes>
