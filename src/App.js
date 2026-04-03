@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -7,12 +7,22 @@ import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';
 import StudentDashboard from './pages/studentdashboard';
+import AdminDashboard from './pages/admindashboard';
 import PaymentVerify from './pages/paymentverify';
 import SellerApplicationCallback from './pages/sellerapplicationcallback';
 
 function AppContent() {
   const { user, loading } = useAuth();
   
+  // Handle email confirmation redirect
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) {
+      // User confirmed email, redirect to login
+      window.location.href = '/login';
+    }
+  }, []);
+
   console.log('AppContent - User:', user);
   console.log('AppContent - User role:', user?.profile?.role);
 
@@ -24,15 +34,22 @@ function AppContent() {
     );
   }
 
-  // If user is logged in, show student dashboard only
   if (user) {
-    // Redirect admins to separate admin site
-    if (user.profile?.role === 'admin') {
-      window.location.href = 'https://studymart-admin.vercel.app';
-      return null;
+    const userRole = user.profile?.role || 'student';
+    
+    if (userRole === 'admin') {
+      return (
+        <Router>
+          <Routes>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/payment/verify" element={<PaymentVerify />} />
+            <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </Router>
+      );
     }
 
-    // Student user - show student dashboard
     return (
       <Router>
         <Routes>
@@ -45,7 +62,6 @@ function AppContent() {
     );
   }
 
-  // User is NOT logged in - show guest page
   return (
     <Router>
       <Routes>

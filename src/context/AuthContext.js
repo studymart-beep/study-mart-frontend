@@ -81,6 +81,8 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (response.data.success) {
+        // Show success message - user needs to confirm email
+        alert('Account created successfully! Please check your email to confirm your account before logging in.');
         return { success: true };
       }
     } catch (error) {
