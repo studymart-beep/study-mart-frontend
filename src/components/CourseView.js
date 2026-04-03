@@ -13,14 +13,18 @@ export default function CoursePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('materials');
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     fetchCourse();
     checkEnrollment();
+  }, [courseId]);
+
+  useEffect(() => {
     if (isEnrolled) {
       fetchContents();
     }
-  }, [courseId, isEnrolled]);
+  }, [isEnrolled]);
 
   const fetchCourse = async () => {
     try {
@@ -28,8 +32,10 @@ export default function CoursePage() {
       if (response.data.success) {
         setCourse(response.data.course);
       }
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching course:', error);
+      setLoading(false);
     }
   };
 
@@ -55,20 +61,20 @@ export default function CoursePage() {
       }
     } catch (error) {
       console.error('Error fetching contents:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleEnroll = async () => {
+    setEnrolling(true);
     try {
       const response = await api.post(`/courses/${courseId}/enroll`);
       if (response.data.success) {
         setIsEnrolled(true);
-        fetchContents();
       }
     } catch (error) {
       console.error('Error enrolling:', error);
+    } finally {
+      setEnrolling(false);
     }
   };
 
@@ -82,179 +88,182 @@ export default function CoursePage() {
     return url;
   };
 
-  const tabs = [
-    { id: 'materials', icon: '📄', label: 'Materials', count: contents.filter(c => c.content_type === 'pdf').length },
-    { id: 'videos', icon: '🎥', label: 'Videos', count: contents.filter(c => c.content_type === 'video').length },
-    { id: 'cbt', icon: '📝', label: 'CBT', count: contents.filter(c => c.content_type === 'cbt').length },
-    { id: 'exam', icon: '📋', label: 'Exam', count: contents.filter(c => c.content_type === 'exam').length }
-  ];
-
   const materials = contents.filter(c => c.content_type === 'pdf');
   const videos = contents.filter(c => c.content_type === 'video');
   const cbtList = contents.filter(c => c.content_type === 'cbt');
   const exams = contents.filter(c => c.content_type === 'exam');
 
+  if (loading) {
+    return <div style={styles.loading}>Loading course...</div>;
+  }
+
   if (!course) {
-    return <div style={styles.loading}>Loading...</div>;
+    return <div style={styles.loading}>Course not found</div>;
   }
 
   return (
     <div style={styles.container}>
-      {/* Course Header */}
+      {/* Header */}
       <div style={styles.header}>
-        <button onClick={() => navigate('/dashboard')} style={styles.backButton}>← Back to Dashboard</button>
+        <button onClick={() => navigate('/dashboard')} style={styles.backButton}>
+          ← Back to Dashboard
+        </button>
         <h1 style={styles.courseTitle}>{course.title}</h1>
-        <p style={styles.courseInstructor}>👨‍🏫 {course.instructor || 'Expert Instructor'}</p>
+        <p style={styles.courseInstructor}>👨‍🏫 {course.instructor || 'Study Mart Instructor'}</p>
+        
         {!isEnrolled && (
-          <button onClick={handleEnroll} style={styles.enrollButton}>Enroll Now</button>
+          <button onClick={handleEnroll} disabled={enrolling} style={styles.enrollButton}>
+            {enrolling ? 'Enrolling...' : 'Enroll Now'}
+          </button>
         )}
         {isEnrolled && (
           <div style={styles.enrolledBadge}>✅ You are enrolled in this course</div>
         )}
       </div>
 
-      {/* Tabs */}
-      <div style={styles.tabs}>
-        {tabs.map(tab => (
+      {/* Tabs - Only show if enrolled */}
+      {isEnrolled && (
+        <div style={styles.tabs}>
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              ...styles.tab,
-              ...(activeTab === tab.id ? styles.tabActive : {})
-            }}
+            onClick={() => setActiveTab('materials')}
+            style={{...styles.tab, ...(activeTab === 'materials' ? styles.tabActive : {})}}
           >
-            <span>{tab.icon}</span> {tab.label}
-            {tab.count > 0 && <span style={styles.badge}>{tab.count}</span>}
+            📄 Materials {materials.length > 0 && <span style={styles.badge}>{materials.length}</span>}
           </button>
-        ))}
-      </div>
+          <button
+            onClick={() => setActiveTab('videos')}
+            style={{...styles.tab, ...(activeTab === 'videos' ? styles.tabActive : {})}}
+          >
+            🎥 Videos {videos.length > 0 && <span style={styles.badge}>{videos.length}</span>}
+          </button>
+          <button
+            onClick={() => setActiveTab('cbt')}
+            style={{...styles.tab, ...(activeTab === 'cbt' ? styles.tabActive : {})}}
+          >
+            📝 CBT {cbtList.length > 0 && <span style={styles.badge}>{cbtList.length}</span>}
+          </button>
+          <button
+            onClick={() => setActiveTab('exam')}
+            style={{...styles.tab, ...(activeTab === 'exam' ? styles.tabActive : {})}}
+          >
+            📋 Exam {exams.length > 0 && <span style={styles.badge}>{exams.length}</span>}
+          </button>
+        </div>
+      )}
 
       {/* Tab Content */}
       <div style={styles.tabContent}>
-        {/* Materials Tab */}
-        {activeTab === 'materials' && (
-          <div>
-            {!isEnrolled ? (
-              <div style={styles.lockedMessage}>Enroll to access course materials</div>
-            ) : materials.length === 0 ? (
-              <div style={styles.emptyState}>No materials available yet.</div>
-            ) : (
-              <div style={styles.materialsGrid}>
-                {materials.map((item, index) => (
-                  <div key={item.id} style={styles.materialCard}>
-                    <div style={styles.materialIcon}>📄</div>
-                    <div style={styles.materialInfo}>
-                      <h4>{item.title}</h4>
-                      <p>PDF Document • {index + 1}</p>
-                    </div>
-                    <button 
-                      onClick={() => window.open(item.file_url, '_blank')} 
-                      style={styles.downloadBtn}
-                    >
-                      Download
-                    </button>
+        {!isEnrolled ? (
+          <div style={styles.lockedMessage}>
+            <h2>🔒 Enroll to Access Course Content</h2>
+            <p>Click the "Enroll Now" button above to start learning</p>
+          </div>
+        ) : (
+          <>
+            {/* Materials Tab */}
+            {activeTab === 'materials' && (
+              <div>
+                {materials.length === 0 ? (
+                  <div style={styles.emptyState}>No materials uploaded yet.</div>
+                ) : (
+                  <div style={styles.materialsGrid}>
+                    {materials.map((item, index) => (
+                      <div key={item.id} style={styles.materialCard}>
+                        <div style={styles.materialIcon}>📄</div>
+                        <div style={styles.materialInfo}>
+                          <h4>{item.title}</h4>
+                          <p>PDF Document • {index + 1}</p>
+                        </div>
+                        <button onClick={() => window.open(item.file_url, '_blank')} style={styles.downloadBtn}>
+                          Download
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* Videos Tab */}
-        {activeTab === 'videos' && (
-          <div>
-            {!isEnrolled ? (
-              <div style={styles.lockedMessage}>Enroll to access course videos</div>
-            ) : videos.length === 0 ? (
-              <div style={styles.emptyState}>No videos available yet.</div>
-            ) : (
+            {/* Videos Tab */}
+            {activeTab === 'videos' && (
               <div style={styles.videosContainer}>
-                <div style={styles.videoPlayer}>
-                  {selectedVideo && (
-                    <>
-                      <h3 style={styles.videoTitle}>{selectedVideo.title}</h3>
-                      <div style={styles.videoWrapper}>
-                        <iframe
-                          src={`https://www.youtube.com/embed/${extractVideoId(selectedVideo.video_url)}?modestbranding=1&controls=1&rel=0&showinfo=0`}
-                          title={selectedVideo.title}
-                          style={styles.videoFrame}
-                          allowFullScreen
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div style={styles.videoList}>
-                  <h4>Course Videos ({videos.length})</h4>
-                  {videos.map((video, index) => (
-                    <div
-                      key={video.id}
-                      onClick={() => setSelectedVideo(video)}
-                      style={{
-                        ...styles.videoItem,
-                        ...(selectedVideo?.id === video.id ? styles.videoItemActive : {})
-                      }}
-                    >
-                      <span>🎬</span>
-                      <div>
-                        <div style={styles.videoItemTitle}>{video.title}</div>
-                        <small>Video {index + 1}</small>
-                      </div>
+                {videos.length === 0 ? (
+                  <div style={styles.emptyState}>No videos uploaded yet.</div>
+                ) : (
+                  <>
+                    <div style={styles.videoPlayer}>
+                      {selectedVideo && (
+                        <>
+                          <h3 style={styles.videoTitle}>{selectedVideo.title}</h3>
+                          <div style={styles.videoWrapper}>
+                            <iframe
+                              src={`https://www.youtube.com/embed/${extractVideoId(selectedVideo.video_url)}?modestbranding=1&controls=1&rel=0&showinfo=0`}
+                              title={selectedVideo.title}
+                              style={styles.videoFrame}
+                              allowFullScreen
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
-                  ))}
-                </div>
+                    <div style={styles.videoList}>
+                      <h4>Course Videos ({videos.length})</h4>
+                      {videos.map((video, index) => (
+                        <div
+                          key={video.id}
+                          onClick={() => setSelectedVideo(video)}
+                          style={{...styles.videoItem, ...(selectedVideo?.id === video.id ? styles.videoItemActive : {})}}
+                        >
+                          <span>🎬</span>
+                          <div style={styles.videoItemTitle}>{video.title}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* CBT Tab */}
-        {activeTab === 'cbt' && (
-          <div>
-            {!isEnrolled ? (
-              <div style={styles.lockedMessage}>Enroll to access CBT</div>
-            ) : cbtList.length === 0 ? (
-              <div style={styles.emptyState}>No CBT available yet.</div>
-            ) : (
-              cbtList.map(cbt => (
-                <div key={cbt.id} style={styles.cbtCard}>
-                  <div style={styles.cbtHeader}>
-                    <span style={styles.cbtIcon}>📝</span>
-                    <h3>{cbt.title}</h3>
-                  </div>
-                  <p>Computer Based Test - Practice questions to test your knowledge</p>
-                  <button style={styles.startBtn}>Start CBT</button>
-                </div>
-              ))
+            {/* CBT Tab */}
+            {activeTab === 'cbt' && (
+              <div>
+                {cbtList.length === 0 ? (
+                  <div style={styles.emptyState}>No CBT available yet.</div>
+                ) : (
+                  cbtList.map(cbt => (
+                    <div key={cbt.id} style={styles.cbtCard}>
+                      <div style={styles.cbtHeader}>
+                        <span style={styles.cbtIcon}>📝</span>
+                        <h3>{cbt.title}</h3>
+                      </div>
+                      <p>Computer Based Test - Practice questions to test your knowledge</p>
+                      <button style={styles.startBtn}>Start CBT</button>
+                    </div>
+                  ))
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Exam Tab */}
-        {activeTab === 'exam' && (
-          <div>
-            {!isEnrolled ? (
-              <div style={styles.lockedMessage}>Enroll to access exams</div>
-            ) : exams.length === 0 ? (
-              <div style={styles.emptyState}>No exams available yet.</div>
-            ) : (
-              exams.map(exam => (
-                <div key={exam.id} style={styles.examCard}>
-                  <div style={styles.examHeader}>
-                    <span style={styles.examIcon}>📋</span>
-                    <h3>{exam.title}</h3>
-                  </div>
-                  <p>Final Examination - Complete to earn your certificate</p>
-                  <div style={styles.examMeta}>
-                    <span>⏱️ Time Limit: 60 mins</span>
-                    <span>📝 Questions: 50</span>
-                  </div>
-                  <button style={styles.startExamBtn}>Start Exam</button>
-                </div>
-              ))
+            {/* Exam Tab */}
+            {activeTab === 'exam' && (
+              <div>
+                {exams.length === 0 ? (
+                  <div style={styles.emptyState}>No exams available yet.</div>
+                ) : (
+                  exams.map(exam => (
+                    <div key={exam.id} style={styles.examCard}>
+                      <div style={styles.examHeader}>
+                        <span style={styles.examIcon}>📋</span>
+                        <h3>{exam.title}</h3>
+                      </div>
+                      <p>Final Examination - Complete to earn your certificate</p>
+                      <button style={styles.startExamBtn}>Start Exam</button>
+                    </div>
+                  ))
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -317,11 +326,11 @@ const styles = {
     borderBottom: '1px solid #e2e8f0',
   },
   tab: {
-    padding: '10px 20px',
+    padding: '12px 24px',
     backgroundColor: '#f1f5f9',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '14px',
+    fontSize: '15px',
     fontWeight: '500',
     color: '#64748b',
     cursor: 'pointer',
@@ -338,7 +347,7 @@ const styles = {
     color: 'white',
     borderRadius: '10px',
     padding: '2px 6px',
-    fontSize: '10px',
+    fontSize: '11px',
     marginLeft: '6px',
   },
   tabContent: {
@@ -346,15 +355,14 @@ const styles = {
   },
   lockedMessage: {
     textAlign: 'center',
-    padding: '60px',
+    padding: '80px',
     backgroundColor: 'white',
     borderRadius: '12px',
     color: '#64748b',
-    fontSize: '16px',
   },
   materialsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
     gap: '16px',
   },
   materialCard: {
@@ -467,13 +475,6 @@ const styles = {
   examIcon: {
     fontSize: '28px',
   },
-  examMeta: {
-    display: 'flex',
-    gap: '20px',
-    marginTop: '12px',
-    fontSize: '13px',
-    color: '#64748b',
-  },
   startBtn: {
     marginTop: '16px',
     padding: '10px 20px',
@@ -492,17 +493,17 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer',
   },
-  loading: {
-    textAlign: 'center',
-    padding: '50px',
-    fontSize: '18px',
-    color: '#64748b',
-  },
   emptyState: {
     textAlign: 'center',
     padding: '60px',
     backgroundColor: 'white',
     borderRadius: '12px',
+    color: '#64748b',
+  },
+  loading: {
+    textAlign: 'center',
+    padding: '50px',
+    fontSize: '18px',
     color: '#64748b',
   },
 };
