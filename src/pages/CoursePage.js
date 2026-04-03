@@ -8,7 +8,7 @@ export default function CoursePage() {
   const [course, setCourse] = useState(null);
   const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('materials');
   const [selectedVideo, setSelectedVideo] = useState(null);
 
   useEffect(() => {
@@ -102,15 +102,9 @@ export default function CoursePage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - No Exam Tab */}
       <div style={styles.tabsContainer}>
         <div style={styles.tabs}>
-          <button
-            onClick={() => setActiveTab('overview')}
-            style={{...styles.tab, ...(activeTab === 'overview' ? styles.tabActive : {})}}
-          >
-            📖 Overview
-          </button>
           <button
             onClick={() => setActiveTab('materials')}
             style={{...styles.tab, ...(activeTab === 'materials' ? styles.tabActive : {})}}
@@ -134,25 +128,6 @@ export default function CoursePage() {
 
       {/* Tab Content */}
       <div style={styles.tabContent}>
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div style={styles.overviewContainer}>
-            <div style={styles.descriptionCard}>
-              <h2>About This Course</h2>
-              <p>{course.description || 'No description available for this course.'}</p>
-            </div>
-            <div style={styles.whatYoullLearn}>
-              <h3>What You'll Learn</h3>
-              <div style={styles.learnGrid}>
-                <div style={styles.learnItem}>✓ Master core concepts</div>
-                <div style={styles.learnItem}>✓ Practical hands-on exercises</div>
-                <div style={styles.learnItem}>✓ Real-world projects</div>
-                <div style={styles.learnItem}>✓ Certificate of completion</div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Materials Tab */}
         {activeTab === 'materials' && (
           <div>
@@ -282,7 +257,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.05)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z\"></path></svg>\')',
+    background: 'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.05)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>\')',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'bottom',
     backgroundSize: 'cover',
@@ -386,33 +361,6 @@ const styles = {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '40px',
-  },
-  overviewContainer: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '30px',
-  },
-  descriptionCard: {
-    backgroundColor: 'white',
-    padding: '30px',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-  },
-  whatYoullLearn: {
-    backgroundColor: 'white',
-    padding: '30px',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-  },
-  learnGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-    marginTop: '20px',
-  },
-  learnItem: {
-    padding: '8px 0',
-    color: '#334155',
   },
   materialsGrid: {
     display: 'grid',
