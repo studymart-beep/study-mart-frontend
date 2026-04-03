@@ -8,16 +8,12 @@ export default function LearningSection() {
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     fetchCourses();
-    if (user) {
-      fetchEnrolledCourses();
-    }
-  }, [user]);
+  }, []);
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -25,7 +21,7 @@ export default function LearningSection() {
       const response = await api.get('/courses');
       if (response.data.success) {
         setCourses(response.data.courses || []);
-        const uniqueCategories = [...new Set(response.data.courses.map(c => c.level_option))];
+        const uniqueCategories = [...new Set(response.data.courses.map(c => c.category))];
         setCategories(uniqueCategories.filter(Boolean));
       }
     } catch (error) {
@@ -33,18 +29,6 @@ export default function LearningSection() {
       setCourses([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchEnrolledCourses = async () => {
-    try {
-      const response = await api.get('/courses/my-enrollments');
-      if (response.data.success) {
-        setEnrolledCourses(response.data.enrollments.map(e => e.course_id));
-      }
-    } catch (error) {
-      console.error('Error fetching enrollments:', error);
-      setEnrolledCourses([]);
     }
   };
 
@@ -62,48 +46,34 @@ export default function LearningSection() {
     return url;
   };
 
-  const filteredCourses = selectedCategory === 'all' 
-    ? courses 
-    : courses.filter(c => c.level_option === selectedCategory);
+  const filteredCourses = selectedCategory === 'all' ? courses : courses.filter(c => c.category === selectedCategory);
 
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <img src="/logo.png" alt="Study Mart" style={styles.logoImage} />
+        <div style={styles.logoContainer}>
+          <img src="/logo.png" alt="Study Mart" style={styles.logoImage} />
+        </div>
         <h1 style={styles.title}>Learning Center</h1>
         <p style={styles.subtitle}>Learn. Buy. Grow.</p>
       </div>
 
       {categories.length > 0 && (
         <div style={styles.categoriesSection}>
-          <button 
-            onClick={() => setSelectedCategory('all')} 
-            style={{...styles.categoryButton, ...(selectedCategory === 'all' ? styles.categoryActive : {})}}
-          >
-            All
-          </button>
+          <button onClick={() => setSelectedCategory('all')} style={{...styles.categoryButton, ...(selectedCategory === 'all' ? styles.categoryActive : {})}}>All</button>
           {categories.map(cat => (
-            <button 
-              key={cat} 
-              onClick={() => setSelectedCategory(cat)} 
-              style={{...styles.categoryButton, ...(selectedCategory === cat ? styles.categoryActive : {})}}
-            >
-              {cat}
-            </button>
+            <button key={cat} onClick={() => setSelectedCategory(cat)} style={{...styles.categoryButton, ...(selectedCategory === cat ? styles.categoryActive : {})}}>{cat}</button>
           ))}
         </div>
       )}
 
       {loading ? (
-        <div style={styles.loadingContainer}>
-          <div style={styles.loader}></div>
-        </div>
+        <div style={styles.loadingContainer}><div style={styles.loader}></div></div>
       ) : filteredCourses.length === 0 ? (
         <div style={styles.emptyState}>No courses available yet.</div>
       ) : (
         <div style={styles.coursesGrid}>
           {filteredCourses.map(course => {
-            const isEnrolled = enrolledCourses.includes(course.id);
             const videoId = extractVideoId(course.youtube_url);
             return (
               <div key={course.id} style={styles.courseCard} onClick={() => handleCourseClick(course)}>
@@ -113,20 +83,17 @@ export default function LearningSection() {
                   ) : (
                     <div style={styles.placeholderThumbnail}>📹</div>
                   )}
-                  {isEnrolled && <div style={styles.enrolledBadge}>Enrolled</div>}
                 </div>
                 <div style={styles.courseContent}>
                   <h3 style={styles.courseTitle}>{course.title}</h3>
-                  <p style={styles.courseInstructor}>👨‍🏫 {course.instructor || 'Expert Instructor'}</p>
-                  <p style={styles.courseDescription}>{course.description?.substring(0, 100)}...</p>
+                  <p style={styles.courseInstructor}>👨‍🏫 {course.instructor}</p>
+                  <p style={styles.courseDescription}>{course.description}</p>
                   <div style={styles.courseFooter}>
                     <div style={styles.courseMeta}>
                       <span>📊 {course.level_option || 'All levels'}</span>
-                      <span>📅 {course.semester_option ? `Semester ${course.semester_option}` : 'Self-paced'}</span>
+                      <span>⏱️ {course.duration || 'Self-paced'}</span>
                     </div>
-                    <button style={isEnrolled ? styles.watchButton : styles.enrollButton}>
-                      {isEnrolled ? 'Continue' : 'Enroll'}
-                    </button>
+                    <button style={styles.viewButton}>View Course</button>
                   </div>
                 </div>
               </div>
@@ -150,12 +117,16 @@ const styles = {
     textAlign: 'center',
     marginBottom: '40px',
   },
+  logoContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '15px',
+  },
   logoImage: {
-    width: '70px',
-    height: '70px',
+    width: '60px',
+    height: '60px',
     borderRadius: '15px',
     objectFit: 'cover',
-    marginBottom: '15px',
     border: '2px solid #6366f1',
   },
   title: {
@@ -184,7 +155,6 @@ const styles = {
     fontSize: '14px',
     color: '#64748b',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
   },
   categoryActive: {
     backgroundColor: '#6366f1',
@@ -201,14 +171,9 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     cursor: 'pointer',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    ':hover': {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-    },
+    transition: 'transform 0.2s ease',
   },
   thumbnailContainer: {
-    position: 'relative',
     height: '180px',
     backgroundColor: '#f1f5f9',
   },
@@ -225,17 +190,6 @@ const styles = {
     justifyContent: 'center',
     fontSize: '48px',
     backgroundColor: '#e2e8f0',
-  },
-  enrolledBadge: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    padding: '4px 10px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: '600',
   },
   courseContent: {
     padding: '20px',
@@ -272,20 +226,9 @@ const styles = {
     fontSize: '12px',
     color: '#64748b',
   },
-  enrollButton: {
+  viewButton: {
     padding: '6px 15px',
     backgroundColor: '#6366f1',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  watchButton: {
-    padding: '6px 15px',
-    backgroundColor: '#10b981',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
@@ -308,7 +251,7 @@ const styles = {
   },
   emptyState: {
     textAlign: 'center',
-    padding: '60px',
+    padding: '50px',
     backgroundColor: 'white',
     borderRadius: '12px',
     color: '#64748b',

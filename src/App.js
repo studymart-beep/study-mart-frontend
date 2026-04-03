@@ -1,29 +1,16 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
-// Import pages
 import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';
 import StudentDashboard from './pages/studentdashboard';
-import CoursePage from './pages/CoursePage';
 import PaymentVerify from './pages/paymentverify';
 import SellerApplicationCallback from './pages/sellerapplicationcallback';
+import CoursePage from './pages/CoursePage';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  
-  console.log('AppContent - User:', user);
-  console.log('AppContent - User role:', user?.profile?.role);
-
-  // Handle email confirmation redirect
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      window.location.href = '/login';
-    }
-  }, []);
 
   if (loading) {
     return (
@@ -36,7 +23,6 @@ function AppContent() {
   if (user) {
     const userRole = user.profile?.role || 'student';
     
-    // Redirect admins to separate admin site
     if (userRole === 'admin') {
       window.location.href = 'https://study-mart-admin.vercel.app';
       return null;
