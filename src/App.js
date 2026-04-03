@@ -7,7 +7,6 @@ import Guest from './pages/guest';
 import Login from './pages/login';
 import Register from './pages/register';
 import StudentDashboard from './pages/studentdashboard';
-import AdminDashboard from './pages/admindashboard';
 import CoursePage from './pages/CoursePage';
 import PaymentVerify from './pages/paymentverify';
 import SellerApplicationCallback from './pages/sellerapplicationcallback';
@@ -37,18 +36,10 @@ function AppContent() {
   if (user) {
     const userRole = user.profile?.role || 'student';
     
+    // Redirect admins to separate admin site
     if (userRole === 'admin') {
-      return (
-        <Router>
-          <Routes>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/course/:courseId" element={<CoursePage />} />
-            <Route path="/payment/verify" element={<PaymentVerify />} />
-            <Route path="/seller/application/payment-callback" element={<SellerApplicationCallback />} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Routes>
-        </Router>
-      );
+      window.location.href = 'https://study-mart-admin.vercel.app';
+      return null;
     }
 
     return (
