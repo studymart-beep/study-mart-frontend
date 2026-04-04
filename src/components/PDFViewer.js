@@ -20,12 +20,21 @@ export default function PDFViewer({ materials }) {
           <>
             <h3 style={styles.title}>{selectedMaterial.title}</h3>
             <div style={styles.pdfWrapper}>
-              <iframe
-                src={selectedMaterial.file_url}
-                title={selectedMaterial.title}
-                style={styles.pdfFrame}
-                onError={() => console.log('PDF failed to load')}
-              />
+              {selectedMaterial.file_url ? (
+                <object
+                  data={selectedMaterial.file_url}
+                  type="application/pdf"
+                  style={styles.pdfFrame}
+                >
+                  <iframe
+                    src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(selectedMaterial.file_url)}`}
+                    title={selectedMaterial.title}
+                    style={styles.pdfFrame}
+                  />
+                </object>
+              ) : (
+                <div style={styles.placeholder}>No file URL available</div>
+              )}
             </div>
           </>
         ) : (
@@ -56,18 +65,85 @@ export default function PDFViewer({ materials }) {
 }
 
 const styles = {
-  container: { display: 'flex', gap: '25px', flexWrap: 'wrap' },
-  viewerSection: { flex: 2, minWidth: '400px', backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-  pdfWrapper: { height: '600px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f5f5f5' },
-  pdfFrame: { width: '100%', height: '100%', border: 'none' },
-  title: { fontSize: '18px', fontWeight: '600', marginBottom: '15px' },
-  listSection: { flex: 1, minWidth: '280px', backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-  materialList: { marginTop: '15px', maxHeight: '500px', overflowY: 'auto' },
-  listItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px' },
-  listItemActive: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#e0e7ff', marginBottom: '8px' },
-  icon: { fontSize: '24px' },
-  listInfo: { flex: 1 },
-  listTitle: { fontWeight: '500' },
-  placeholder: { textAlign: 'center', padding: '80px', color: '#64748b' },
-  empty: { textAlign: 'center', padding: '40px', color: '#64748b' },
+  container: {
+    display: 'flex',
+    gap: '25px',
+    flexWrap: 'wrap',
+  },
+  viewerSection: {
+    flex: 2,
+    minWidth: '400px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  },
+  pdfWrapper: {
+    height: '600px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    backgroundColor: '#f5f5f5',
+  },
+  pdfFrame: {
+    width: '100%',
+    height: '100%',
+    border: 'none',
+  },
+  title: {
+    fontSize: '18px',
+    fontWeight: '600',
+    marginBottom: '15px',
+  },
+  listSection: {
+    flex: 1,
+    minWidth: '280px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  },
+  materialList: {
+    marginTop: '15px',
+    maxHeight: '500px',
+    overflowY: 'auto',
+  },
+  listItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    marginBottom: '8px',
+  },
+  listItemActive: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    backgroundColor: '#e0e7ff',
+    marginBottom: '8px',
+  },
+  icon: {
+    fontSize: '24px',
+  },
+  listInfo: {
+    flex: 1,
+  },
+  listTitle: {
+    fontWeight: '500',
+  },
+  placeholder: {
+    textAlign: 'center',
+    padding: '80px',
+    color: '#64748b',
+  },
+  empty: {
+    textAlign: 'center',
+    padding: '40px',
+    color: '#64748b',
+  },
 };
