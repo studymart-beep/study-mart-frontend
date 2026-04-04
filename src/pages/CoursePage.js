@@ -19,8 +19,15 @@ export default function CoursePage() {
   const fetchCourse = async () => {
     try {
       const response = await api.get(`/courses/${courseId}`);
-      if (response.data.success) {
+      if (response.data.success && response.data.course) {
         setCourse(response.data.course);
+      } else {
+        setCourse({
+          id: courseId,
+          title: 'Course',
+          description: 'Course content',
+          instructor: 'Study Mart'
+        });
       }
       setLoading(false);
     } catch (error) {
@@ -32,9 +39,9 @@ export default function CoursePage() {
   const fetchContents = async () => {
     try {
       const response = await api.get(`/courses/${courseId}/contents`);
-      if (response.data.success) {
-        setContents(response.data.contents || []);
-        const firstVideo = response.data.contents?.find(c => c.content_type === 'video');
+      if (response.data.success && response.data.contents) {
+        setContents(response.data.contents);
+        const firstVideo = response.data.contents.find(c => c.content_type === 'video');
         if (firstVideo) setSelectedVideo(firstVideo);
       }
     } catch (error) {
@@ -44,12 +51,16 @@ export default function CoursePage() {
 
   const extractVideoId = (url) => {
     if (!url) return null;
-    if (url.includes('youtube.com/embed/')) return url.split('/embed/')[1].split('?')[0];
-    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
-    if (url.includes('v=')) {
-      try { return new URL(url).searchParams.get('v'); } catch(e) { return null; }
+    if (url.includes('youtube.com/watch?v=')) {
+      return url.split('v=')[1].split('&')[0];
     }
-    return url;
+    if (url.includes('youtu.be/')) {
+      return url.split('youtu.be/')[1].split('?')[0];
+    }
+    if (url.includes('youtube.com/embed/')) {
+      return url.split('/embed/')[1].split('?')[0];
+    }
+    return null;
   };
 
   const materials = contents.filter(c => c.content_type === 'pdf');
@@ -57,11 +68,7 @@ export default function CoursePage() {
   const cbtList = contents.filter(c => c.content_type === 'cbt');
 
   if (loading) {
-    return <div style={styles.loadingContainer}>Loading course...</div>;
-  }
-
-  if (!course) {
-    return <div style={styles.errorContainer}>Course not found</div>;
+    return <div style={styles.loading}>Loading course...</div>;
   }
 
   return (
@@ -71,121 +78,103 @@ export default function CoursePage() {
         <button onClick={() => navigate('/dashboard')} style={styles.backButton}>
           ← Back to Dashboard
         </button>
-        <h1 style={styles.courseTitle}>{course.title}</h1>
-        <p style={styles.courseInstructor}>👨‍🏫 {course.instructor || 'Study Mart Instructor'}</p>
+        <h1 style={styles.title}>{course?.title || 'Course'}</h1>
+        <p style={styles.instructor}>👨‍🏫 {course?.instructor || 'Study Mart'}</p>
+        <div style={styles.stats}>
+          <span>📄 {materials.length} Materials</span>
+          <span>🎥 {videos.length} Videos</span>
+          <span>📝 {cbtList.length} CBT</span>
+        </div>
       </div>
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        <button
-          onClick={() => setActiveTab('materials')}
-          style={{...styles.tab, ...(activeTab === 'materials' ? styles.tabActive : {})}}
-        >
-          📄 Materials {materials.length > 0 && <span style={styles.badge}>{materials.length}</span>}
+        <button onClick={() => setActiveTab('materials')} style={{...styles.tab, ...(activeTab === 'materials' ? styles.activeTab : {})}}>
+          📄 Materials
         </button>
-        <button
-          onClick={() => setActiveTab('videos')}
-          style={{...styles.tab, ...(activeTab === 'videos' ? styles.tabActive : {})}}
-        >
-          🎥 Videos {videos.length > 0 && <span style={styles.badge}>{videos.length}</span>}
+        <button onClick={() => setActiveTab('videos')} style={{...styles.tab, ...(activeTab === 'videos' ? styles.activeTab : {})}}>
+          🎥 Videos
         </button>
-        <button
-          onClick={() => setActiveTab('cbt')}
-          style={{...styles.tab, ...(activeTab === 'cbt' ? styles.tabActive : {})}}
-        >
-          📝 CBT {cbtList.length > 0 && <span style={styles.badge}>{cbtList.length}</span>}
+        <button onClick={() => setActiveTab('cbt')} style={{...styles.tab, ...(activeTab === 'cbt' ? styles.activeTab : {})}}>
+          📝 CBT
         </button>
       </div>
 
-      {/* Tab Content */}
-      <div style={styles.tabContent}>
-        {/* Materials Tab */}
-        {activeTab === 'materials' && (
-          <div>
-            {materials.length === 0 ? (
-              <div style={styles.emptyState}>No materials available yet.</div>
-            ) : (
-              <div style={styles.materialsGrid}>
-                {materials.map((item, index) => (
-                  <div key={item.id} style={styles.materialCard}>
-                    <div style={styles.materialIcon}>📄</div>
-                    <div style={styles.materialInfo}>
-                      <h4>{item.title}</h4>
-                      <p>PDF Document • {index + 1}</p>
-                    </div>
-                    <button onClick={() => window.open(item.file_url, '_blank')} style={styles.downloadBtn}>
-                      Download
-                    </button>
+      {/* Materials Tab */}
+      {activeTab === 'materials' && (
+        <div style={styles.tabContent}>
+          {materials.length === 0 ? (
+            <div style={styles.empty}>No materials available</div>
+          ) : (
+            materials.map(item => (
+              <div key={item.id} style={styles.materialCard}>
+                <span style={styles.materialIcon}>📄</span>
+                <div style={styles.materialInfo}>
+                  <h4>{item.title}</h4>
+                  <p>PDF Document</p>
+                </div>
+                <button onClick={() => window.open(item.file_url, '_blank')} style={styles.downloadBtn}>
+                  Download
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Videos Tab */}
+      {activeTab === 'videos' && (
+        <div style={styles.tabContent}>
+          {videos.length === 0 ? (
+            <div style={styles.empty}>No videos available</div>
+          ) : (
+            <div style={styles.videosContainer}>
+              <div style={styles.videoPlayer}>
+                {selectedVideo && extractVideoId(selectedVideo.video_url) ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${extractVideoId(selectedVideo.video_url)}`}
+                    title={selectedVideo.title}
+                    style={styles.videoFrame}
+                    allowFullScreen
+                  />
+                ) : (
+                  <div style={styles.videoError}>Select a video to play</div>
+                )}
+                <h3>{selectedVideo?.title}</h3>
+              </div>
+              <div style={styles.videoList}>
+                {videos.map(video => (
+                  <div
+                    key={video.id}
+                    onClick={() => setSelectedVideo(video)}
+                    style={{...styles.videoItem, ...(selectedVideo?.id === video.id ? styles.videoItemActive : {})}}
+                  >
+                    <span>🎬</span>
+                    <span>{video.title}</span>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Videos Tab */}
-        {activeTab === 'videos' && (
-          <div>
-            {videos.length === 0 ? (
-              <div style={styles.emptyState}>No videos available yet.</div>
-            ) : (
-              <div style={styles.videosContainer}>
-                <div style={styles.videoPlayer}>
-                  {selectedVideo && (
-                    <>
-                      <h3 style={styles.videoTitle}>{selectedVideo.title}</h3>
-                      <div style={styles.videoWrapper}>
-                        <iframe
-                          src={`https://www.youtube.com/embed/${extractVideoId(selectedVideo.video_url)}?modestbranding=1&controls=1&rel=0&showinfo=0`}
-                          title={selectedVideo.title}
-                          style={styles.videoFrame}
-                          allowFullScreen
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div style={styles.videoList}>
-                  <h4>Course Videos ({videos.length})</h4>
-                  {videos.map((video, index) => (
-                    <div
-                      key={video.id}
-                      onClick={() => setSelectedVideo(video)}
-                      style={{...styles.videoItem, ...(selectedVideo?.id === video.id ? styles.videoItemActive : {})}}
-                    >
-                      <span>🎬</span>
-                      <div>
-                        <div style={styles.videoItemTitle}>{video.title}</div>
-                        <small>Video {index + 1}</small>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      {/* CBT Tab */}
+      {activeTab === 'cbt' && (
+        <div style={styles.tabContent}>
+          {cbtList.length === 0 ? (
+            <div style={styles.empty}>No CBT available</div>
+          ) : (
+            cbtList.map(cbt => (
+              <div key={cbt.id} style={styles.cbtCard}>
+                <h3>📝 {cbt.title}</h3>
+                <p>Practice Test</p>
+                <button style={styles.startBtn}>Start Test</button>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* CBT Tab */}
-        {activeTab === 'cbt' && (
-          <div>
-            {cbtList.length === 0 ? (
-              <div style={styles.emptyState}>No CBT available yet.</div>
-            ) : (
-              cbtList.map(cbt => (
-                <div key={cbt.id} style={styles.cbtCard}>
-                  <div style={styles.cbtHeader}>
-                    <span>📝</span>
-                    <h3>{cbt.title}</h3>
-                  </div>
-                  <p>Computer Based Test - Practice questions to test your knowledge</p>
-                  <button style={styles.startBtn}>Start CBT</button>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -193,189 +182,144 @@ export default function CoursePage() {
 const styles = {
   container: {
     minHeight: '100vh',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: 'white',
-    padding: '30px',
-    borderBottom: '1px solid #e2e8f0',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    padding: '40px',
   },
   backButton: {
-    background: 'none',
+    background: 'rgba(255,255,255,0.2)',
     border: 'none',
-    color: '#6366f1',
-    fontSize: '14px',
+    color: 'white',
+    padding: '8px 16px',
+    borderRadius: '20px',
     cursor: 'pointer',
+    marginBottom: '20px',
+  },
+  title: {
+    fontSize: '32px',
+    marginBottom: '10px',
+  },
+  instructor: {
+    fontSize: '16px',
+    opacity: 0.9,
     marginBottom: '15px',
   },
-  courseTitle: {
-    fontSize: '32px',
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: '8px',
-  },
-  courseInstructor: {
-    fontSize: '16px',
-    color: '#64748b',
-    marginBottom: '20px',
+  stats: {
+    display: 'flex',
+    gap: '20px',
+    fontSize: '14px',
   },
   tabs: {
     display: 'flex',
-    gap: '4px',
-    padding: '0 30px',
     backgroundColor: 'white',
-    borderBottom: '1px solid #e2e8f0',
+    padding: '0 20px',
+    borderBottom: '1px solid #ddd',
   },
   tab: {
-    padding: '16px 24px',
+    padding: '15px 25px',
     background: 'none',
     border: 'none',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: '#64748b',
     cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
+    fontSize: '16px',
+    color: '#666',
   },
-  tabActive: {
-    color: '#6366f1',
-    borderBottom: '2px solid #6366f1',
-  },
-  badge: {
-    backgroundColor: '#6366f1',
-    color: 'white',
-    borderRadius: '10px',
-    padding: '2px 6px',
-    fontSize: '11px',
-    marginLeft: '6px',
+  activeTab: {
+    color: '#667eea',
+    borderBottom: '2px solid #667eea',
   },
   tabContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
     padding: '30px',
-  },
-  materialsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '16px',
+    maxWidth: '1000px',
+    margin: '0 auto',
   },
   materialCard: {
     display: 'flex',
     alignItems: 'center',
     gap: '15px',
-    padding: '20px',
+    padding: '15px',
     backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+    borderRadius: '8px',
+    marginBottom: '10px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   },
   materialIcon: {
-    fontSize: '40px',
+    fontSize: '30px',
   },
   materialInfo: {
     flex: 1,
   },
   downloadBtn: {
     padding: '8px 16px',
-    backgroundColor: '#6366f1',
+    backgroundColor: '#667eea',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '5px',
     cursor: 'pointer',
   },
   videosContainer: {
     display: 'flex',
-    gap: '24px',
+    gap: '20px',
     flexWrap: 'wrap',
   },
   videoPlayer: {
     flex: 2,
-    minWidth: '300px',
     backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '12px',
-  },
-  videoWrapper: {
-    position: 'relative',
-    paddingBottom: '56.25%',
-    height: 0,
-    backgroundColor: '#000',
-    borderRadius: '12px',
-    overflow: 'hidden',
+    padding: '15px',
+    borderRadius: '8px',
   },
   videoFrame: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
     width: '100%',
-    height: '100%',
+    height: '315px',
     border: 'none',
-  },
-  videoTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    marginBottom: '12px',
+    borderRadius: '8px',
   },
   videoList: {
     flex: 1,
-    minWidth: '250px',
     backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '12px',
+    padding: '15px',
+    borderRadius: '8px',
   },
   videoItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    padding: '12px',
-    borderRadius: '8px',
+    gap: '10px',
+    padding: '10px',
     cursor: 'pointer',
-    marginBottom: '8px',
+    borderRadius: '5px',
   },
   videoItemActive: {
     backgroundColor: '#e0e7ff',
   },
-  videoItemTitle: {
-    fontWeight: '500',
+  videoError: {
+    textAlign: 'center',
+    padding: '50px',
+    color: '#999',
   },
   cbtCard: {
     backgroundColor: 'white',
     padding: '20px',
-    borderRadius: '12px',
-    marginBottom: '16px',
-  },
-  cbtHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '12px',
+    borderRadius: '8px',
+    marginBottom: '15px,
   },
   startBtn: {
-    marginTop: '16px',
-    padding: '10px 20px',
-    backgroundColor: '#6366f1',
+    marginTop: '10px',
+    padding: '8px 16px',
+    backgroundColor: '#667eea',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '5px',
     cursor: 'pointer',
   },
-  emptyState: {
-    textAlign: 'center',
-    padding: '60px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    color: '#64748b',
-  },
-  loadingContainer: {
+  loading: {
     textAlign: 'center',
     padding: '50px',
-    fontSize: '18px',
-    color: '#64748b',
   },
-  errorContainer: {
+  empty: {
     textAlign: 'center',
     padding: '50px',
-    fontSize: '18px',
-    color: '#ef4444',
+    color: '#999',
   },
 };
