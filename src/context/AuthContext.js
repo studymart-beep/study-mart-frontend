@@ -11,12 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const adminEmails = [
-    'studymart21@gmail.com',
-    'onomeraphaelfejiro@gmail.com',
-    'fejiroforeigner@gmail.com'
-  ];
-
   useEffect(() => {
     loadUser();
   }, []);
@@ -44,14 +38,13 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success) {
         const { user: userData, session } = response.data;
         
-        const isAdmin = adminEmails.includes(email);
-        const userRole = userData.profile?.role || (isAdmin ? 'admin' : 'student');
-        
+        // REMOVED: Auto admin assignment from email list
+        // Now role comes ONLY from database
         const userWithRole = {
           ...userData,
           profile: {
             ...userData.profile,
-            role: userRole
+            role: userData.profile?.role || 'student'
           }
         };
         
@@ -71,18 +64,15 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, fullName) => {
     try {
-      const isAdmin = adminEmails.includes(email);
-      
       const response = await api.post('/auth/signup', { 
         email, 
         password, 
         fullName,
-        role: isAdmin ? 'admin' : 'student'
+        role: 'student'  // Always set as student on signup
       });
       
       if (response.data.success) {
-        // Show success message - user needs to confirm email
-        alert('Account created successfully! Please check your email to confirm your account before logging in.');
+        alert('Account created successfully! Please login.');
         return { success: true };
       }
     } catch (error) {
