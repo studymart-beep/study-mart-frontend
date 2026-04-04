@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function VideoPlayer({ videos }) {
-  const [selectedVideo, setSelectedVideo] = useState(videos && videos.length > 0 ? videos[0] : null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+
+  useEffect(() => {
+    if (videos && videos.length > 0 && !selectedVideo) {
+      setSelectedVideo(videos[0]);
+    }
+  }, [videos]);
 
   const getYoutubeId = (url) => {
     if (!url) return null;
@@ -11,15 +17,16 @@ export default function VideoPlayer({ videos }) {
     return null;
   };
 
+  console.log('Videos received:', videos);
+
   if (!videos || videos.length === 0) {
     return <div style={styles.empty}>No videos available</div>;
   }
 
   return (
     <div style={styles.container}>
-      {/* Video Player */}
       <div style={styles.playerSection}>
-        {selectedVideo && getYoutubeId(selectedVideo.video_url) ? (
+        {selectedVideo ? (
           <>
             <h3 style={styles.videoTitle}>{selectedVideo.title}</h3>
             <div style={styles.videoWrapper}>
@@ -33,14 +40,10 @@ export default function VideoPlayer({ videos }) {
             </div>
           </>
         ) : (
-          <div style={styles.placeholder}>
-            <span>🎬</span>
-            <p>Select a video to play</p>
-          </div>
+          <div style={styles.placeholder}>Select a video to play</div>
         )}
       </div>
 
-      {/* Video Playlist */}
       <div style={styles.playlistSection}>
         <h3>Course Videos ({videos.length})</h3>
         <div style={styles.playlist}>
@@ -50,9 +53,9 @@ export default function VideoPlayer({ videos }) {
               onClick={() => setSelectedVideo(video)}
               style={selectedVideo?.id === video.id ? styles.playlistItemActive : styles.playlistItem}
             >
-              <span style={styles.playIcon}>▶</span>
-              <div style={styles.playlistInfo}>
-                <div style={styles.playlistTitle}>{video.title}</div>
+              <span>▶</span>
+              <div>
+                <div>{video.title}</div>
                 <small>Click to play</small>
               </div>
             </div>
@@ -64,88 +67,15 @@ export default function VideoPlayer({ videos }) {
 }
 
 const styles = {
-  container: {
-    display: 'flex',
-    gap: '25px',
-    flexWrap: 'wrap',
-  },
-  playerSection: {
-    flex: 2,
-    minWidth: '400px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  videoWrapper: {
-    position: 'relative',
-    paddingBottom: '56.25%',
-    height: 0,
-    backgroundColor: '#000',
-    borderRadius: '8px',
-    overflow: 'hidden',
-  },
-  videoFrame: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    border: 'none',
-  },
-  videoTitle: {
-    fontSize: '18px',
-    marginBottom: '15px',
-  },
-  playlistSection: {
-    flex: 1,
-    minWidth: '280px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  playlist: {
-    marginTop: '15px',
-  },
-  playlistItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    marginBottom: '8px',
-  },
-  playlistItemActive: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    backgroundColor: '#e0e7ff',
-    marginBottom: '8px',
-  },
-  playIcon: {
-    fontSize: '20px',
-    color: '#6366f1',
-  },
-  playlistInfo: {
-    flex: 1,
-  },
-  playlistTitle: {
-    fontWeight: '500',
-  },
-  placeholder: {
-    textAlign: 'center',
-    padding: '80px',
-    color: '#64748b',
-  },
-  empty: {
-    textAlign: 'center',
-    padding: '40px',
-    color: '#64748b',
-  },
+  container: { display: 'flex', gap: '25px', flexWrap: 'wrap' },
+  playerSection: { flex: 2, minWidth: '400px', backgroundColor: 'white', borderRadius: '12px', padding: '20px' },
+  videoWrapper: { position: 'relative', paddingBottom: '56.25%', height: 0, backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden' },
+  videoFrame: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' },
+  videoTitle: { fontSize: '18px', marginBottom: '15px' },
+  playlistSection: { flex: 1, minWidth: '280px', backgroundColor: 'white', borderRadius: '12px', padding: '20px' },
+  playlist: { marginTop: '15px' },
+  playlistItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px' },
+  playlistItemActive: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#e0e7ff', marginBottom: '8px' },
+  placeholder: { textAlign: 'center', padding: '80px', color: '#64748b' },
+  empty: { textAlign: 'center', padding: '40px', color: '#64748b' },
 };
