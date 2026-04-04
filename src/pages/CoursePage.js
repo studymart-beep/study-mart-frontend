@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import VideoPlayer from '../components/VideoPlayer';
+import PDFViewer from '../components/PDFViewer';
 
 export default function CoursePage() {
   const { courseId } = useParams();
@@ -39,14 +41,6 @@ export default function CoursePage() {
     }
   };
 
-  const getYoutubeId = (url) => {
-    if (!url) return null;
-    if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
-    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
-    if (url.includes('embed/')) return url.split('/embed/')[1].split('?')[0];
-    return null;
-  };
-
   const videos = contents.filter(c => c.content_type === 'video');
   const materials = contents.filter(c => c.content_type === 'pdf');
   const cbtList = contents.filter(c => c.content_type === 'cbt');
@@ -55,86 +49,68 @@ export default function CoursePage() {
   if (!course) return <div style={styles.center}>Course not found</div>;
 
   return (
-    <div>
+    <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <button onClick={() => navigate('/dashboard')} style={styles.backBtn}>← Back</button>
+        <button onClick={() => navigate('/dashboard')} style={styles.backBtn}>← Back to Dashboard</button>
         <h1 style={styles.title}>{course.title}</h1>
-        <p>👨‍🏫 {course.instructor || 'Instructor'}</p>
+        <p style={styles.instructor}>👨‍🏫 {course.instructor || 'Study Mart Instructor'}</p>
+        <div style={styles.stats}>
+          <span>🎥 {videos.length} Videos</span>
+          <span>📄 {materials.length} Materials</span>
+          <span>📝 {cbtList.length} CBT</span>
+        </div>
       </div>
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        <button onClick={() => setActiveTab('videos')} style={activeTab === 'videos' ? styles.activeTabBtn : styles.tabBtn}>🎥 Videos</button>
-        <button onClick={() => setActiveTab('materials')} style={activeTab === 'materials' ? styles.activeTabBtn : styles.tabBtn}>📄 Materials</button>
-        <button onClick={() => setActiveTab('cbt')} style={activeTab === 'cbt' ? styles.activeTabBtn : styles.tabBtn}>📝 CBT</button>
+        <button onClick={() => setActiveTab('videos')} style={activeTab === 'videos' ? styles.activeTab : styles.tab}>
+          🎥 Videos
+        </button>
+        <button onClick={() => setActiveTab('materials')} style={activeTab === 'materials' ? styles.activeTab : styles.tab}>
+          📄 Materials
+        </button>
+        <button onClick={() => setActiveTab('cbt')} style={activeTab === 'cbt' ? styles.activeTab : styles.tab}>
+          📝 CBT
+        </button>
       </div>
 
-      {/* Videos Tab */}
-      {activeTab === 'videos' && (
-        <div style={styles.tabContent}>
-          {videos.length === 0 ? (
-            <p>No videos yet</p>
-          ) : (
-            videos.map(video => (
-              <div key={video.id} style={styles.videoCard}>
-                <h3>{video.title}</h3>
-                {getYoutubeId(video.video_url) && (
-                  <iframe
-                    src={`https://www.youtube.com/embed/${getYoutubeId(video.video_url)}`}
-                    style={styles.videoFrame}
-                    allowFullScreen
-                  />
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Materials Tab - PDF Viewer inside */}
-      {activeTab === 'materials' && (
-        <div style={styles.tabContent}>
-          {materials.length === 0 ? (
-            <p>No materials yet</p>
-          ) : (
-            materials.map(mat => (
-              <div key={mat.id} style={styles.materialCard}>
-                <h3>📄 {mat.title}</h3>
-                {mat.file_url && (
-                  <iframe src={mat.file_url} style={styles.pdfFrame} title={mat.title} />
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* CBT Tab */}
-      {activeTab === 'cbt' && (
-        <div style={styles.tabContent}>
-          {cbtList.length === 0 ? (
-            <p>No CBT available</p>
-          ) : (
-            cbtList.map(cbt => (
-              <div key={cbt.id} style={styles.cbtCard}>
-                <h3>📝 {cbt.title}</h3>
-                <p>Practice Test</p>
-                <button style={styles.startBtn}>Start Test</button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      {/* Tab Content */}
+      <div style={styles.tabContent}>
+        {activeTab === 'videos' && <VideoPlayer videos={videos} />}
+        {activeTab === 'materials' && <PDFViewer materials={materials} />}
+        {activeTab === 'cbt' && (
+          <div style={styles.cbtGrid}>
+            {cbtList.length === 0 ? (
+              <div style={styles.emptyState}>No CBT available yet</div>
+            ) : (
+              cbtList.map(cbt => (
+                <div key={cbt.id} style={styles.cbtCard}>
+                  <div style={styles.cbtIcon}>📝</div>
+                  <div style={styles.cbtInfo}>
+                    <h3>{cbt.title}</h3>
+                    <p>Computer Based Test - Practice questions</p>
+                    <button style={styles.startBtn}>Start Test →</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#f5f5f5',
+  },
   header: {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
-    padding: '30px',
+    padding: '40px',
   },
   backBtn: {
     background: 'rgba(255,255,255,0.2)',
@@ -143,76 +119,89 @@ const styles = {
     padding: '8px 16px',
     borderRadius: '20px',
     cursor: 'pointer',
-    marginBottom: '15px',
+    marginBottom: '20px',
+    fontSize: '14px',
   },
   title: {
-    fontSize: '28px',
-    marginBottom: '8px',
+    fontSize: '32px',
+    marginBottom: '10px',
+  },
+  instructor: {
+    fontSize: '16px',
+    opacity: 0.9,
+    marginBottom: '15px',
+  },
+  stats: {
+    display: 'flex',
+    gap: '20px',
+    fontSize: '14px',
   },
   tabs: {
     display: 'flex',
     backgroundColor: 'white',
-    padding: '0 20px',
-    borderBottom: '1px solid #ddd',
+    padding: '0 30px',
+    borderBottom: '1px solid #e2e8f0',
+    gap: '10px',
   },
-  tabBtn: {
-    padding: '12px 20px',
+  tab: {
+    padding: '15px 25px',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
     fontSize: '15px',
-    color: '#666',
+    fontWeight: '500',
+    color: '#64748b',
+    borderBottom: '2px solid transparent',
   },
-  activeTabBtn: {
-    padding: '12px 20px',
+  activeTab: {
+    padding: '15px 25px',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
     fontSize: '15px',
-    color: '#667eea',
-    borderBottom: '2px solid #667eea',
+    fontWeight: '500',
+    color: '#6366f1',
+    borderBottom: '2px solid #6366f1',
   },
   tabContent: {
-    padding: '20px',
+    padding: '30px',
+    maxWidth: '1400px',
+    margin: '0 auto',
   },
-  videoCard: {
-    backgroundColor: 'white',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-  },
-  videoFrame: {
-    width: '100%',
-    height: '315px',
-    border: 'none',
-    marginTop: '10px',
-  },
-  materialCard: {
-    backgroundColor: 'white',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-  },
-  pdfFrame: {
-    width: '100%',
-    height: '500px',
-    border: 'none',
-    marginTop: '10px',
+  cbtGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+    gap: '20px',
   },
   cbtCard: {
     backgroundColor: 'white',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '15px',
+    borderRadius: '12px',
+    padding: '20px',
+    display: 'flex',
+    gap: '15px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  },
+  cbtIcon: {
+    fontSize: '40px',
+  },
+  cbtInfo: {
+    flex: 1,
   },
   startBtn: {
-    marginTop: '10px',
+    marginTop: '15px',
     padding: '8px 16px',
-    backgroundColor: '#667eea',
+    backgroundColor: '#6366f1',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '6px',
     cursor: 'pointer',
+  },
+  emptyState: {
+    textAlign: 'center',
+    padding: '60px',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    color: '#64748b',
   },
   center: {
     textAlign: 'center',
