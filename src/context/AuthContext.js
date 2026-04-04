@@ -38,19 +38,9 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success) {
         const { user: userData, session } = response.data;
         
-        // REMOVED: Auto admin assignment from email list
-        // Now role comes ONLY from database
-        const userWithRole = {
-          ...userData,
-          profile: {
-            ...userData.profile,
-            role: userData.profile?.role || 'student'
-          }
-        };
-        
-        localStorage.setItem('user', JSON.stringify(userWithRole));
+        localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', session.access_token);
-        setUser(userWithRole);
+        setUser(userData);
         
         return { success: true };
       }
@@ -67,8 +57,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/signup', { 
         email, 
         password, 
-        fullName,
-        role: 'student'  // Always set as student on signup
+        fullName
       });
       
       if (response.data.success) {
