@@ -302,7 +302,7 @@ const styles = {
     backgroundColor: 'white',
     padding: '20px',
     borderRadius: '8px',
-    marginBottom: '15px,
+    marginBottom: '15px',
   },
   startBtn: {
     marginTop: '10px',
