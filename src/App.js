@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Guest from './pages/guest';
@@ -23,11 +23,10 @@ function AppContent() {
   if (user) {
     const userRole = user.profile?.role || 'student';
     
-    if (userRole === 'admin') {
-      window.location.href = 'https://study-mart-admin.vercel.app';
-      return null;
-    }
-
+    // REMOVED: Auto redirect to admin dashboard
+    // Admin users will see student dashboard unless they go to admin URL directly
+    
+    // Student user - show student dashboard
     return (
       <Router>
         <Routes>
@@ -41,6 +40,7 @@ function AppContent() {
     );
   }
 
+  // User is NOT logged in - show guest page
   return (
     <Router>
       <Routes>
